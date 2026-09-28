@@ -67,21 +67,31 @@ export class AudioEngine {
     this.audio.addEventListener('stalled', this.handleStalled);
   }
 
+  private ensureAudio(): HTMLAudioElement | null {
+    if (typeof window === 'undefined') return null;
+    if (!this.audio) {
+      this.initAudio();
+    }
+    return this.audio;
+  }
+
   // ── Public API ──────────────────────────────────────────
 
   /** Load a track and prepare for playback */
   public load(track: Track): void {
-    if (!this.audio) return;
+    const audio = this.ensureAudio();
+    if (!audio) return;
 
     const loadId = ++this.currentLoadId;
     this.currentTrack = track;
     this.hasRetried = false;
 
     // Reset current element
-    this.audio.pause();
-    this.audio.src = track.audioUrl;
-    this.audio.currentTime = 0;
-    this.audio.load();
+    audio.pause();
+    if (audio.src !== track.audioUrl) {
+      audio.src = track.audioUrl;
+    }
+    audio.currentTime = 0;
 
     // Verify cancellation after loading initiation
     if (loadId !== this.currentLoadId) {
@@ -91,10 +101,11 @@ export class AudioEngine {
 
   /** Start or resume playback */
   public async play(): Promise<void> {
-    if (!this.audio || !this.currentTrack) return;
+    const audio = this.ensureAudio();
+    if (!audio || !this.currentTrack) return;
 
     try {
-      await this.audio.play();
+      await audio.play();
     } catch (err: unknown) {
       if (this.isDestroyed) return;
 
@@ -122,14 +133,16 @@ export class AudioEngine {
 
   /** Pause playback */
   public pause(): void {
-    if (!this.audio) return;
-    this.audio.pause();
+    const audio = this.ensureAudio();
+    if (!audio) return;
+    audio.pause();
   }
 
   /** Toggle playback */
   public async toggle(): Promise<void> {
-    if (!this.audio) return;
-    if (this.audio.paused) {
+    const audio = this.ensureAudio();
+    if (!audio) return;
+    if (audio.paused) {
       await this.play();
     } else {
       this.pause();
@@ -138,24 +151,27 @@ export class AudioEngine {
 
   /** Seek to target seconds */
   public seek(seconds: number): void {
-    if (!this.audio) return;
-    const clamped = Math.max(0, Math.min(seconds, this.audio.duration || seconds));
+    const audio = this.ensureAudio();
+    if (!audio) return;
+    const clamped = Math.max(0, Math.min(seconds, audio.duration || seconds));
     if (Number.isFinite(clamped)) {
-      this.audio.currentTime = clamped;
+      audio.currentTime = clamped;
     }
   }
 
   /** Set playback volume (0 to 1) */
   public setVolume(volume: number): void {
-    if (!this.audio) return;
+    const audio = this.ensureAudio();
+    if (!audio) return;
     const clamped = Math.max(0, Math.min(1, volume));
-    this.audio.volume = clamped;
+    audio.volume = clamped;
   }
 
   /** Set mute state */
   public setMuted(muted: boolean): void {
-    if (!this.audio) return;
-    this.audio.muted = muted;
+    const audio = this.ensureAudio();
+    if (!audio) return;
+    audio.muted = muted;
   }
 
   /** Preload the next track in a separate hidden audio element */
