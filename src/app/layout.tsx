@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { PlayerBar } from '@/components/layout/PlayerBar';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { AudioProvider } from '@/components/layout/AudioProvider';
+import { ToastContainer } from '@/components/ui/Toast';
 import { Providers } from './providers';
 
 const inter = Inter({
@@ -56,6 +57,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* Fixed bottom player bar */}
           <PlayerBar />
+
+          {/* Toast notifications */}
+          <ToastContainer />
 
           {/* Mobile bottom nav (hidden md+) */}
           <MobileNav />

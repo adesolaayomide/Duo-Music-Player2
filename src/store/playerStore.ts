@@ -1,5 +1,6 @@
 import type { PlayerState, PlayerStatus, RepeatMode, Track } from '@/types';
 import { getAudioEngine } from '@/lib/audio/AudioEngine';
+import { useUIStore } from '@/store/uiStore';
 import { create } from 'zustand';
 import { persist, subscribeWithSelector } from 'zustand/middleware';
 
@@ -556,6 +557,8 @@ export const selectError = (s: PlayerState): string | null =>
 // ─────────────────────────────────────────────
 
 let isEngineSubscribed = false;
+let lastPreloadedTrackId: string | null = null;
+let consecutiveErrorsCount = 0;
 
 export function initAudioEngineSubscriptions(): void {
   if (typeof window === 'undefined' || isEngineSubscribed) return;
@@ -574,6 +577,35 @@ export function initAudioEngineSubscriptions(): void {
       currentTime,
       duration: duration > 0 ? duration : s.duration,
     }));
+
+    // Preloading next track logic:
+    // When playback passes 70% or is within 15s of end
+    const s = store.getState();
+    const shouldCheckPreload =
+      duration > 0 &&
+      (currentTime / duration >= 0.7 || (duration - currentTime <= 15 && duration > 20));
+
+    if (shouldCheckPreload && s.repeat !== 'one') {
+      // Check data-saver mode
+      const isDataSaver =
+        typeof navigator !== 'undefined' &&
+        'connection' in navigator &&
+        Boolean((navigator as unknown as { connection?: { saveData?: boolean } }).connection?.saveData);
+
+      if (!isDataSaver) {
+        let nextTrack: Track | undefined;
+        if (s.currentIndex < s.queue.length - 1) {
+          nextTrack = s.queue[s.currentIndex + 1];
+        } else if (s.repeat === 'all' && s.queue.length > 1) {
+          nextTrack = s.queue[0];
+        }
+
+        if (nextTrack && nextTrack.id !== lastPreloadedTrackId) {
+          lastPreloadedTrackId = nextTrack.id;
+          engine.preload(nextTrack);
+        }
+      }
+    }
   });
 
   engine.on('durationchange', ({ duration }) => {
@@ -583,7 +615,13 @@ export function initAudioEngineSubscriptions(): void {
   });
 
   engine.on('play', () => {
+    consecutiveErrorsCount = 0;
     store.setState({ status: 'playing', error: null });
+  });
+
+  engine.on('canplay', () => {
+    consecutiveErrorsCount = 0;
+    store.setState((s) => (s.status === 'loading' ? { status: 'playing' } : s));
   });
 
   engine.on('pause', () => {
@@ -594,16 +632,13 @@ export function initAudioEngineSubscriptions(): void {
     store.setState((s) => (s.status === 'playing' ? { status: 'loading' } : s));
   });
 
-  engine.on('canplay', () => {
-    store.setState((s) => (s.status === 'loading' ? { status: 'playing' } : s));
-  });
-
   engine.on('bufferedchange', ({ buffered }) => {
     store.setState({ buffered });
   });
 
   engine.on('ended', () => {
     const s = store.getState();
+    lastPreloadedTrackId = null;
     if (s.repeat === 'one') {
       engine.seek(0);
       engine.play();
@@ -614,9 +649,40 @@ export function initAudioEngineSubscriptions(): void {
   });
 
   engine.on('error', ({ message, isAutoplayBlocked }) => {
-    store.setState({
-      status: isAutoplayBlocked ? 'paused' : 'error',
-      error: message,
-    });
+    if (isAutoplayBlocked) {
+      store.setState({
+        status: 'paused',
+        error: message,
+      });
+      return;
+    }
+
+    const s = store.getState();
+    const currentTrack = s.queue[s.currentIndex];
+    consecutiveErrorsCount++;
+
+    if (consecutiveErrorsCount >= s.queue.length || s.queue.length <= 1) {
+      // All tracks failed, or only single track failed. Halt to avoid infinite loop.
+      consecutiveErrorsCount = 0;
+      store.setState({
+        status: 'error',
+        error: message,
+      });
+      useUIStore.getState().addToast({
+        type: 'error',
+        message: `Playback stopped: ${currentTrack ? currentTrack.title : 'Track'} could not be played.`,
+      });
+    } else {
+      // Skip to next track
+      store.setState({
+        status: 'loading',
+        error: message,
+      });
+      useUIStore.getState().addToast({
+        type: 'error',
+        message: `Error playing "${currentTrack?.title || 'track'}". Skipping to next...`,
+      });
+      s.next();
+    }
   });
 }
