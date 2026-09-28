@@ -1,236 +1,228 @@
 'use client';
 
-import { usePlayerStore, selectCurrentTrack } from '@/store/playerStore';
-import { formatDuration } from '@/lib/utils/helpers';
-import { Play, Pause, SkipBack, SkipForward, Shuffle, Repeat, Repeat1, Volume2, VolumeX, ListMusic, Maximize2, Heart } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import { useState } from 'react';
 import Image from 'next/image';
-import { Button } from '@/components/ui/Button';
-
-// ─────────────────────────────────────────────
-//  PlayerBar
-// ─────────────────────────────────────────────
+import {
+  Shuffle,
+  SkipBack,
+  SkipForward,
+  Repeat,
+  Repeat1,
+  ListMusic,
+  Maximize2,
+  Heart,
+  AlertCircle,
+  RotateCcw,
+} from 'lucide-react';
+import {
+  usePlayerStore,
+  selectCurrentTrack,
+  selectShuffle,
+  selectRepeat,
+  selectStatus,
+  selectError,
+} from '@/store/playerStore';
+import { PlayButton } from '@/components/player/PlayButton';
+import { ProgressBar } from '@/components/player/ProgressBar';
+import { VolumeControl } from '@/components/player/VolumeControl';
+import { QueuePanel } from '@/components/player/QueuePanel';
+import { MiniPlayer } from '@/components/player/MiniPlayer';
+import { cn } from '@/lib/utils/cn';
 
 export function PlayerBar() {
-  const {
-    isPlaying,
-    isBuffering,
-    position,
-    volume,
-    isMuted,
-    shuffle,
-    repeat,
-    queue,
-    setPlaying,
-    playNext,
-    playPrev,
-    setVolume,
-    toggleMute,
-    toggleShuffle,
-    cycleRepeat,
-    setPosition,
-  } = usePlayerStore();
-
   const currentTrack = usePlayerStore(selectCurrentTrack);
-  const duration = currentTrack?.duration ?? 0;
-  const progress = duration > 0 ? (position / duration) * 100 : 0;
+  const shuffle = usePlayerStore(selectShuffle);
+  const repeat = usePlayerStore(selectRepeat);
+  const status = usePlayerStore(selectStatus);
+  const error = usePlayerStore(selectError);
 
-  if (!currentTrack && queue.length === 0) {
-    // Render empty bar to preserve the layout slot
-    return (
-      <div
-        className="fixed bottom-0 left-0 right-0 z-50 h-[var(--player-height)] bg-bg-elevated border-t border-bg-hover"
-        aria-hidden="true"
-      />
-    );
-  }
+  const next = usePlayerStore((s) => s.next);
+  const previous = usePlayerStore((s) => s.previous);
+  const toggleShuffle = usePlayerStore((s) => s.toggleShuffle);
+  const cycleRepeat = usePlayerStore((s) => s.cycleRepeat);
+  const togglePlay = usePlayerStore((s) => s.togglePlay);
+
+  const [isQueueOpen, setIsQueueOpen] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
+
+  const isIdle = status === 'idle' && !currentTrack;
+  const isError = status === 'error';
 
   return (
-    <footer
-      className="fixed bottom-0 left-0 right-0 z-50 h-[var(--player-height)] bg-bg-elevated border-t border-bg-hover flex items-center px-4 gap-4"
-      aria-label="Music player"
-    >
-      {/* ── LEFT: Cover + title + like ────────────── */}
-      <div className="flex items-center gap-3 w-[30%] min-w-0">
-        {currentTrack && (
-          <>
-            <div className="relative h-14 w-14 flex-shrink-0 rounded-sm overflow-hidden bg-bg-hover">
-              {currentTrack.coverUrl && (
-                <Image
-                  src={currentTrack.coverUrl}
-                  alt={`${currentTrack.albumName} cover`}
-                  fill
-                  sizes="56px"
-                  className="object-cover"
-                />
+    <>
+      {/* Mobile Mini Player */}
+      <MiniPlayer />
+
+      {/* Queue Drawer Panel */}
+      <QueuePanel isOpen={isQueueOpen} onClose={() => setIsQueueOpen(false)} />
+
+      {/* Desktop PlayerBar */}
+      <footer
+        className="hidden md:flex fixed bottom-0 left-0 right-0 z-50 h-[var(--player-height)] bg-bg-elevated border-t border-bg-hover items-center px-4 justify-between"
+        aria-label="Audio player"
+      >
+        {/* ── LEFT: Track Info ─────────────────────────── */}
+        <div className="flex items-center gap-3 w-[30%] min-w-0">
+          {currentTrack ? (
+            <>
+              <div className="relative h-14 w-14 flex-shrink-0 rounded-sm overflow-hidden bg-bg-hover shadow-sm">
+                {currentTrack.coverUrl ? (
+                  <Image
+                    src={currentTrack.coverUrl}
+                    alt={`${currentTrack.title} cover`}
+                    fill
+                    sizes="56px"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full bg-bg-surface flex items-center justify-center text-text-muted text-sm">
+                    ♪
+                  </div>
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-white truncate leading-tight">
+                  {currentTrack.title}
+                </p>
+                <p className="text-xs text-text-secondary truncate mt-0.5">
+                  {currentTrack.artistName}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsLiked(!isLiked)}
+                aria-label={isLiked ? 'Remove from your liked songs' : 'Save to your liked songs'}
+                className={cn(
+                  'p-1.5 rounded-full transition-colors flex-shrink-0',
+                  isLiked ? 'text-accent' : 'text-text-secondary hover:text-white'
+                )}
+              >
+                <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
+              </button>
+            </>
+          ) : (
+            <div className="flex items-center gap-3 text-text-muted select-none">
+              <div className="h-14 w-14 rounded-sm bg-bg-surface flex items-center justify-center text-xs text-text-muted">
+                ♪
+              </div>
+              <div>
+                <p className="text-sm font-medium text-text-secondary">No track playing</p>
+                <p className="text-xs text-text-muted">Choose something to play</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* ── CENTER: Controls & Progress ───────────────── */}
+        <div className="flex flex-col items-center gap-1.5 flex-1 max-w-[45%]">
+          {/* Playback Error Banner */}
+          {isError && (
+            <div className="flex items-center gap-2 text-xs text-danger font-medium bg-danger/10 px-2.5 py-0.5 rounded-full mb-0.5">
+              <AlertCircle size={14} />
+              <span className="truncate max-w-[280px]">{error || 'Playback error'}</span>
+              <button
+                type="button"
+                onClick={togglePlay}
+                aria-label="Retry playback"
+                className="hover:underline flex items-center gap-0.5 text-white ml-1"
+              >
+                <RotateCcw size={12} />
+                <span>Retry</span>
+              </button>
+            </div>
+          )}
+
+          {/* Control Buttons */}
+          <div className="flex items-center gap-3" role="group" aria-label="Playback controls">
+            <button
+              type="button"
+              onClick={toggleShuffle}
+              disabled={isIdle}
+              aria-label={shuffle ? 'Disable shuffle' : 'Enable shuffle'}
+              aria-pressed={shuffle}
+              className={cn(
+                'relative p-1.5 rounded-full transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed',
+                shuffle ? 'text-accent' : 'text-text-secondary hover:text-white'
               )}
-            </div>
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-text-primary truncate leading-snug">
-                {currentTrack.title}
-              </p>
-              <p className="text-xs text-text-secondary truncate">{currentTrack.artistName}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Like this track"
-              className="text-text-secondary hover:text-accent flex-shrink-0 h-8 w-8"
             >
-              <Heart size={16} />
-            </Button>
-          </>
-        )}
-      </div>
+              <Shuffle size={18} />
+              {shuffle && (
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full" />
+              )}
+            </button>
 
-      {/* ── CENTER: Controls + progress bar ───────── */}
-      <div className="flex flex-col items-center gap-2 flex-1 max-w-[45%]">
-        {/* Control buttons */}
-        <div className="flex items-center gap-4" role="group" aria-label="Playback controls">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleShuffle}
-            aria-label={shuffle ? 'Disable shuffle' : 'Enable shuffle'}
-            aria-pressed={shuffle}
-            className={cn('h-8 w-8', shuffle ? 'text-accent' : 'text-text-secondary hover:text-text-primary')}
-          >
-            <Shuffle size={16} />
-          </Button>
+            <button
+              type="button"
+              onClick={previous}
+              disabled={isIdle}
+              aria-label="Previous track"
+              className="p-1.5 text-text-secondary hover:text-white transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <SkipBack size={20} />
+            </button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={playPrev}
-            aria-label="Previous track"
-            className="text-text-secondary hover:text-text-primary h-8 w-8"
-          >
-            <SkipBack size={18} />
-          </Button>
+            <PlayButton size="md" />
 
-          <Button
-            variant="icon"
-            size="icon"
-            onClick={() => setPlaying(!isPlaying)}
-            aria-label={isPlaying ? 'Pause' : 'Play'}
-            disabled={!currentTrack}
-            className={cn(
-              'h-10 w-10 rounded-full bg-white text-bg-base hover:scale-105',
-              isBuffering && 'opacity-70'
-            )}
-          >
-            {isBuffering ? (
-              <span className="h-4 w-4 border-2 border-bg-base border-t-transparent rounded-full animate-spin" />
-            ) : isPlaying ? (
-              <Pause size={20} fill="currentColor" />
-            ) : (
-              <Play size={20} fill="currentColor" />
-            )}
-          </Button>
+            <button
+              type="button"
+              onClick={next}
+              disabled={isIdle}
+              aria-label="Next track"
+              className="p-1.5 text-text-secondary hover:text-white transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <SkipForward size={20} />
+            </button>
 
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={playNext}
-            aria-label="Next track"
-            className="text-text-secondary hover:text-text-primary h-8 w-8"
-          >
-            <SkipForward size={18} />
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={cycleRepeat}
-            aria-label={
-              repeat === 'off' ? 'Enable repeat' : repeat === 'all' ? 'Enable repeat one' : 'Disable repeat'
-            }
-            aria-pressed={repeat !== 'off'}
-            className={cn('h-8 w-8', repeat !== 'off' ? 'text-accent' : 'text-text-secondary hover:text-text-primary')}
-          >
-            {repeat === 'one' ? <Repeat1 size={16} /> : <Repeat size={16} />}
-          </Button>
-        </div>
-
-        {/* Progress bar */}
-        <div className="flex items-center gap-2 w-full">
-          <span className="text-xs text-text-muted w-9 text-right tabular-nums">
-            {formatDuration(position)}
-          </span>
-          <div className="relative flex-1 group">
-            <input
-              type="range"
-              min={0}
-              max={duration || 1}
-              value={position}
-              step={0.5}
-              onChange={(e) => setPosition(Number(e.target.value))}
-              aria-label="Seek"
-              aria-valuemin={0}
-              aria-valuemax={duration}
-              aria-valuenow={Math.floor(position)}
-              aria-valuetext={`${formatDuration(position)} of ${formatDuration(duration)}`}
-              className="w-full h-1 appearance-none bg-bg-hover rounded-full cursor-pointer
-                [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:hidden group-hover:[&::-webkit-slider-thumb]:block
-                [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white
-                accent-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-              style={{
-                background: `linear-gradient(to right, var(--color-accent) ${progress}%, #282828 ${progress}%)`,
-              }}
-            />
+            <button
+              type="button"
+              onClick={cycleRepeat}
+              disabled={isIdle}
+              aria-label={`Repeat mode: ${repeat}`}
+              aria-pressed={repeat !== 'off'}
+              className={cn(
+                'relative p-1.5 rounded-full transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed',
+                repeat !== 'off' ? 'text-accent' : 'text-text-secondary hover:text-white'
+              )}
+            >
+              {repeat === 'one' ? <Repeat1 size={18} /> : <Repeat size={18} />}
+              {repeat !== 'off' && (
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full" />
+              )}
+            </button>
           </div>
-          <span className="text-xs text-text-muted w-9 tabular-nums">
-            {formatDuration(duration)}
-          </span>
+
+          {/* Seek Bar */}
+          <ProgressBar showTime />
         </div>
-      </div>
 
-      {/* ── RIGHT: Volume + extras ─────────────────── */}
-      <div className="flex items-center justify-end gap-2 w-[25%]">
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Open queue"
-          className="text-text-secondary hover:text-text-primary h-8 w-8"
-        >
-          <ListMusic size={16} />
-        </Button>
+        {/* ── RIGHT: Queue & Volume & Fullscreen ────────── */}
+        <div className="flex items-center justify-end gap-3 w-[30%]">
+          <button
+            type="button"
+            onClick={() => setIsQueueOpen(!isQueueOpen)}
+            aria-label="Toggle play queue"
+            aria-expanded={isQueueOpen}
+            className={cn(
+              'p-1.5 rounded-sm transition-colors duration-fast',
+              isQueueOpen ? 'text-accent' : 'text-text-secondary hover:text-white'
+            )}
+          >
+            <ListMusic size={18} />
+          </button>
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleMute}
-          aria-label={isMuted ? 'Unmute' : 'Mute'}
-          aria-pressed={isMuted}
-          className="text-text-secondary hover:text-text-primary h-8 w-8"
-        >
-          {isMuted || volume === 0 ? <VolumeX size={16} /> : <Volume2 size={16} />}
-        </Button>
+          <VolumeControl />
 
-        <input
-          type="range"
-          min={0}
-          max={1}
-          step={0.01}
-          value={isMuted ? 0 : volume}
-          onChange={(e) => setVolume(Number(e.target.value))}
-          aria-label="Volume"
-          className="w-24 h-1 appearance-none rounded-full cursor-pointer accent-accent
-            focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
-          style={{
-            background: `linear-gradient(to right, var(--color-accent) ${(isMuted ? 0 : volume) * 100}%, #282828 ${(isMuted ? 0 : volume) * 100}%)`,
-          }}
-        />
-
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Full screen player"
-          className="text-text-secondary hover:text-text-primary h-8 w-8 hidden lg:flex"
-        >
-          <Maximize2 size={14} />
-        </Button>
-      </div>
-    </footer>
+          <button
+            type="button"
+            aria-label="Full screen view"
+            className="p-1.5 text-text-secondary hover:text-white transition-colors duration-fast hidden lg:inline-block rounded-sm"
+          >
+            <Maximize2 size={16} />
+          </button>
+        </div>
+      </footer>
+    </>
   );
 }

@@ -76,21 +76,30 @@ export interface Playlist {
 // ─────────────────────────────────────────────
 
 export type RepeatMode = 'off' | 'all' | 'one';
+export type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
 
 export interface PlayerState {
-  /** Ordered list of tracks in the current queue */
+  /** Ordered list of tracks in the current active queue */
   queue: Track[];
+  /** Original un-shuffled queue to restore upon toggling shuffle off */
+  originalQueue: Track[];
   /** Index into `queue` of the currently loaded track */
   currentIndex: number;
-  isPlaying: boolean;
-  isBuffering: boolean;
+  /** High-level playback status */
+  status: PlayerStatus;
   /** Current playback position in seconds */
-  position: number;
+  currentTime: number;
+  /** Total duration in seconds */
+  duration: number;
+  /** Buffered progress in seconds */
+  buffered: number;
   /** Playback volume 0–1 */
   volume: number;
   isMuted: boolean;
   shuffle: boolean;
   repeat: RepeatMode;
+  /** Human-readable error message, or null */
+  error: string | null;
 }
 
 // ─────────────────────────────────────────────

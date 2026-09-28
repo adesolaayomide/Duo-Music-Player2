@@ -1,49 +1,85 @@
-import type { PlayerState, Track, RepeatMode } from '@/types';
+import type { PlayerState, PlayerStatus, RepeatMode, Track } from '@/types';
+import { getAudioEngine } from '@/lib/audio/AudioEngine';
 import { create } from 'zustand';
 import { persist, subscribeWithSelector } from 'zustand/middleware';
 
 // ─────────────────────────────────────────────
-//  Actions
+//  Helper: Fisher-Yates Shuffle
 // ─────────────────────────────────────────────
 
-interface PlayerActions {
-  /** Replace the queue and start playing from the given index */
-  loadQueue: (tracks: Track[], startIndex?: number) => void;
-  /** Append tracks to the end of the queue */
-  enqueue: (tracks: Track[]) => void;
-  /** Play the track at a specific queue index */
-  jumpTo: (index: number) => void;
-  playNext: () => void;
-  playPrev: () => void;
-  setPlaying: (playing: boolean) => void;
-  setBuffering: (buffering: boolean) => void;
-  setPosition: (seconds: number) => void;
-  setVolume: (volume: number) => void;
-  toggleMute: () => void;
-  toggleShuffle: () => void;
-  cycleRepeat: () => void;
-  removeFromQueue: (index: number) => void;
-  reorderQueue: (from: number, to: number) => void;
+function fisherYatesShuffle<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = result[i]!;
+    result[i] = result[j]!;
+    result[j] = temp;
+  }
+  return result;
 }
 
 // ─────────────────────────────────────────────
-//  Initial state
+//  Public Player Actions Interface
+// ─────────────────────────────────────────────
+
+export interface PlayerActions {
+  /** Play a specific track, optionally providing a full queue context */
+  playTrack: (track: Track, queue?: Track[]) => void;
+  /** Play an entire queue starting from a given index */
+  playQueue: (tracks: Track[], startIndex?: number) => void;
+  /** Toggle between playing and paused */
+  togglePlay: () => void;
+  /** Skip to next track according to repeat / shuffle rules */
+  next: () => void;
+  /** Go to previous track, or restart if >3s in */
+  previous: () => void;
+  /** Seek to target seconds */
+  seek: (seconds: number) => void;
+  /** Set volume (0 to 1) */
+  setVolume: (volume: number) => void;
+  /** Toggle mute state */
+  toggleMute: () => void;
+  /** Toggle shuffle state */
+  toggleShuffle: () => void;
+  /** Cycle repeat between 'off' -> 'all' -> 'one' */
+  cycleRepeat: () => void;
+  /** Add tracks to the end of the queue */
+  addToQueue: (tracks: Track | Track[]) => void;
+  /** Queue a track to play immediately after the current one */
+  playNext: (track: Track) => void;
+  /** Remove a track by index from the queue */
+  removeFromQueue: (index: number) => void;
+  /** Reorder tracks in the active queue */
+  reorderQueue: (from: number, to: number) => void;
+  /** Clear the current queue and reset player status */
+  clearQueue: () => void;
+  /** Set status internally */
+  setStatus: (status: PlayerStatus) => void;
+  /** Set error internally */
+  setError: (error: string | null) => void;
+}
+
+// ─────────────────────────────────────────────
+//  Initial State
 // ─────────────────────────────────────────────
 
 const initialState: PlayerState = {
   queue: [],
+  originalQueue: [],
   currentIndex: -1,
-  isPlaying: false,
-  isBuffering: false,
-  position: 0,
+  status: 'idle',
+  currentTime: 0,
+  duration: 0,
+  buffered: 0,
   volume: 0.8,
   isMuted: false,
   shuffle: false,
   repeat: 'off',
+  error: null,
 };
 
 // ─────────────────────────────────────────────
-//  Store
+//  Zustand Store
 // ─────────────────────────────────────────────
 
 export const usePlayerStore = create<PlayerState & PlayerActions>()(
@@ -52,121 +88,423 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       (set, get) => ({
         ...initialState,
 
-        loadQueue: (tracks, startIndex = 0) => {
+        setStatus: (status) => set({ status }),
+        setError: (error) => set({ error }),
+
+        playTrack: (track, queueContext) => {
+          const engine = getAudioEngine();
+          const baseQueue = queueContext && queueContext.length > 0 ? queueContext : [track];
+          const { shuffle } = get();
+
+          let activeQueue: Track[];
+          let activeIndex: number;
+
+          if (shuffle) {
+            const others = baseQueue.filter((t) => t.id !== track.id);
+            activeQueue = [track, ...fisherYatesShuffle(others)];
+            activeIndex = 0;
+          } else {
+            activeQueue = [...baseQueue];
+            const foundIndex = activeQueue.findIndex((t) => t.id === track.id);
+            activeIndex = foundIndex >= 0 ? foundIndex : 0;
+          }
+
           set({
-            queue: tracks,
-            currentIndex: startIndex,
-            isPlaying: true,
-            position: 0,
-            isBuffering: false,
+            queue: activeQueue,
+            originalQueue: [...baseQueue],
+            currentIndex: activeIndex,
+            status: 'loading',
+            currentTime: 0,
+            duration: track.duration || 0,
+            buffered: 0,
+            error: null,
+          });
+
+          engine.load(track);
+          engine.play().catch(() => {
+            set({ status: 'paused' });
           });
         },
 
-        enqueue: (tracks) => {
-          set((s) => ({ queue: [...s.queue, ...tracks] }));
-        },
+        playQueue: (tracks, startIndex = 0) => {
+          if (!tracks || tracks.length === 0) return;
+          const engine = getAudioEngine();
+          const safeIndex = Math.max(0, Math.min(startIndex, tracks.length - 1));
+          const currentTrack = tracks[safeIndex]!;
+          const { shuffle } = get();
 
-        jumpTo: (index) => {
-          const { queue } = get();
-          if (index < 0 || index >= queue.length) return;
-          set({ currentIndex: index, position: 0, isPlaying: true, isBuffering: false });
-        },
-
-        playNext: () => {
-          const { queue, currentIndex, shuffle, repeat } = get();
-          if (queue.length === 0) return;
+          let activeQueue: Track[];
+          let activeIndex: number;
 
           if (shuffle) {
-            let next: number;
-            do {
-              next = Math.floor(Math.random() * queue.length);
-            } while (next === currentIndex && queue.length > 1);
-            set({ currentIndex: next, position: 0, isBuffering: false });
+            const others = tracks.filter((_, idx) => idx !== safeIndex);
+            activeQueue = [currentTrack, ...fisherYatesShuffle(others)];
+            activeIndex = 0;
+          } else {
+            activeQueue = [...tracks];
+            activeIndex = safeIndex;
+          }
+
+          set({
+            queue: activeQueue,
+            originalQueue: [...tracks],
+            currentIndex: activeIndex,
+            status: 'loading',
+            currentTime: 0,
+            duration: currentTrack.duration || 0,
+            buffered: 0,
+            error: null,
+          });
+
+          engine.load(currentTrack);
+          engine.play().catch(() => {
+            set({ status: 'paused' });
+          });
+        },
+
+        togglePlay: () => {
+          const { status, queue, currentIndex, playQueue } = get();
+          const engine = getAudioEngine();
+
+          if (status === 'idle') {
+            if (queue.length > 0 && currentIndex >= 0) {
+              const track = queue[currentIndex];
+              if (track) {
+                engine.load(track);
+                engine.play();
+                set({ status: 'loading' });
+              }
+            } else if (queue.length > 0) {
+              playQueue(queue, 0);
+            }
+            return;
+          }
+
+          if (status === 'playing') {
+            engine.pause();
+            set({ status: 'paused' });
+          } else if (status === 'paused' || status === 'error') {
+            engine.play();
+            set({ status: 'playing', error: null });
+          }
+        },
+
+        next: () => {
+          const { queue, currentIndex, repeat } = get();
+          if (queue.length === 0) return;
+
+          const engine = getAudioEngine();
+
+          // repeat = 'one' replays current track
+          if (repeat === 'one') {
+            engine.seek(0);
+            engine.play();
+            set({ currentTime: 0, status: 'playing', error: null });
             return;
           }
 
           const isLast = currentIndex === queue.length - 1;
-          if (isLast && repeat === 'all') {
-            set({ currentIndex: 0, position: 0, isBuffering: false });
-          } else if (!isLast) {
-            set({ currentIndex: currentIndex + 1, position: 0, isBuffering: false });
-          } else {
-            // End of queue, stop
-            set({ isPlaying: false, position: 0 });
-          }
-        },
 
-        playPrev: () => {
-          const { queue, currentIndex, position } = get();
-          if (queue.length === 0) return;
-          // If > 3 s in, restart current track
-          if (position > 3) {
-            set({ position: 0 });
+          if (isLast) {
+            if (repeat === 'all') {
+              const nextTrack = queue[0]!;
+              set({
+                currentIndex: 0,
+                status: 'loading',
+                currentTime: 0,
+                duration: nextTrack.duration || 0,
+                buffered: 0,
+                error: null,
+              });
+              engine.load(nextTrack);
+              engine.play();
+            } else {
+              // repeat === 'off': stop and reset to first track paused
+              const firstTrack = queue[0];
+              if (firstTrack) {
+                engine.load(firstTrack);
+                engine.pause();
+                engine.seek(0);
+              }
+              set({
+                currentIndex: 0,
+                status: 'paused',
+                currentTime: 0,
+                buffered: 0,
+                error: null,
+              });
+            }
             return;
           }
-          const prev = currentIndex > 0 ? currentIndex - 1 : 0;
-          set({ currentIndex: prev, position: 0, isBuffering: false });
+
+          // Advance to next track
+          const nextIndex = currentIndex + 1;
+          const nextTrack = queue[nextIndex]!;
+          set({
+            currentIndex: nextIndex,
+            status: 'loading',
+            currentTime: 0,
+            duration: nextTrack.duration || 0,
+            buffered: 0,
+            error: null,
+          });
+          engine.load(nextTrack);
+          engine.play();
         },
 
-        setPlaying: (playing) => set({ isPlaying: playing }),
-        setBuffering: (buffering) => set({ isBuffering: buffering }),
-        setPosition: (seconds) => set({ position: seconds }),
+        previous: () => {
+          const { queue, currentIndex, currentTime } = get();
+          if (queue.length === 0) return;
+
+          const engine = getAudioEngine();
+
+          // Rule: if > 3s, restart current track
+          if (currentTime > 3) {
+            engine.seek(0);
+            set({ currentTime: 0 });
+            return;
+          }
+
+          if (currentIndex > 0) {
+            const prevIndex = currentIndex - 1;
+            const prevTrack = queue[prevIndex]!;
+            set({
+              currentIndex: prevIndex,
+              status: 'loading',
+              currentTime: 0,
+              duration: prevTrack.duration || 0,
+              buffered: 0,
+              error: null,
+            });
+            engine.load(prevTrack);
+            engine.play();
+          } else {
+            // At first track, restart it
+            engine.seek(0);
+            set({ currentTime: 0 });
+          }
+        },
+
+        seek: (seconds) => {
+          const { duration } = get();
+          const clamped = Math.max(0, Math.min(seconds, duration || seconds));
+          const engine = getAudioEngine();
+          engine.seek(clamped);
+          set({ currentTime: clamped });
+        },
 
         setVolume: (volume) => {
           const clamped = Math.min(1, Math.max(0, volume));
+          const engine = getAudioEngine();
+          engine.setVolume(clamped);
+          if (clamped > 0 && get().isMuted) {
+            engine.setMuted(false);
+            set({ isMuted: false });
+          }
           set({ volume: clamped, isMuted: clamped === 0 });
         },
 
-        toggleMute: () => set((s) => ({ isMuted: !s.isMuted })),
+        toggleMute: () => {
+          const { isMuted, volume } = get();
+          const nextMuted = !isMuted;
+          const engine = getAudioEngine();
+          engine.setMuted(nextMuted);
+          if (!nextMuted && volume === 0) {
+            engine.setVolume(0.5);
+            set({ volume: 0.5, isMuted: false });
+            return;
+          }
+          set({ isMuted: nextMuted });
+        },
 
-        toggleShuffle: () => set((s) => ({ shuffle: !s.shuffle })),
+        toggleShuffle: () => {
+          const { shuffle, queue, originalQueue, currentIndex } = get();
+          const nextShuffle = !shuffle;
+
+          if (nextShuffle) {
+            // Turning shuffle ON: keep current track first, shuffle remainder
+            if (queue.length <= 1) {
+              set({ shuffle: true });
+              return;
+            }
+
+            const currentTrack = queue[currentIndex];
+            if (!currentTrack) {
+              set({ shuffle: true, queue: fisherYatesShuffle(queue), currentIndex: 0 });
+              return;
+            }
+
+            const others = queue.filter((_, idx) => idx !== currentIndex);
+            const shuffledQueue = [currentTrack, ...fisherYatesShuffle(others)];
+            set({
+              shuffle: true,
+              queue: shuffledQueue,
+              currentIndex: 0,
+            });
+          } else {
+            // Turning shuffle OFF: restore originalQueue, keep current track active
+            const currentTrack = queue[currentIndex];
+            const restoredQueue = [...originalQueue];
+
+            let restoredIndex = 0;
+            if (currentTrack) {
+              const found = restoredQueue.findIndex((t) => t.id === currentTrack.id);
+              restoredIndex = found >= 0 ? found : 0;
+            }
+
+            set({
+              shuffle: false,
+              queue: restoredQueue,
+              currentIndex: restoredIndex,
+            });
+          }
+        },
 
         cycleRepeat: () => {
-          const order: RepeatMode[] = ['off', 'all', 'one'];
+          const modes: RepeatMode[] = ['off', 'all', 'one'];
+          const current = get().repeat;
+          const nextIndex = (modes.indexOf(current) + 1) % modes.length;
+          const nextMode = modes[nextIndex]!;
+          set({ repeat: nextMode });
+        },
+
+        addToQueue: (tracks) => {
+          const items = Array.isArray(tracks) ? tracks : [tracks];
+          if (items.length === 0) return;
+
+          set((s) => ({
+            queue: [...s.queue, ...items],
+            originalQueue: [...s.originalQueue, ...items],
+          }));
+        },
+
+        playNext: (track) => {
           set((s) => {
-            const next = order[(order.indexOf(s.repeat) + 1) % order.length];
-            return { repeat: next };
+            const nextQueue = [...s.queue];
+            const nextOriginal = [...s.originalQueue];
+            const insertIndex = s.currentIndex + 1;
+
+            nextQueue.splice(insertIndex, 0, track);
+            nextOriginal.push(track);
+
+            return {
+              queue: nextQueue,
+              originalQueue: nextOriginal,
+            };
           });
         },
 
         removeFromQueue: (index) => {
-          set((s) => {
-            const queue = s.queue.filter((_, i) => i !== index);
-            let currentIndex = s.currentIndex;
-            if (index < currentIndex) currentIndex -= 1;
-            else if (index === currentIndex) currentIndex = Math.min(currentIndex, queue.length - 1);
-            return { queue, currentIndex };
-          });
+          const { queue, originalQueue, currentIndex, status } = get();
+          if (index < 0 || index >= queue.length) return;
+
+          const trackToRemove = queue[index];
+          const newQueue = queue.filter((_, i) => i !== index);
+          const newOriginal = originalQueue.filter((t) => t.id !== trackToRemove?.id);
+
+          if (newQueue.length === 0) {
+            const engine = getAudioEngine();
+            engine.pause();
+            set({
+              queue: [],
+              originalQueue: [],
+              currentIndex: -1,
+              status: 'idle',
+              currentTime: 0,
+              duration: 0,
+              buffered: 0,
+            });
+            return;
+          }
+
+          if (index < currentIndex) {
+            set({
+              queue: newQueue,
+              originalQueue: newOriginal,
+              currentIndex: currentIndex - 1,
+            });
+          } else if (index === currentIndex) {
+            // Removed current track: play the track now at this index (or wrap/clamp)
+            const nextIndex = index < newQueue.length ? index : 0;
+            const nextTrack = newQueue[nextIndex]!;
+            const engine = getAudioEngine();
+
+            set({
+              queue: newQueue,
+              originalQueue: newOriginal,
+              currentIndex: nextIndex,
+              currentTime: 0,
+              duration: nextTrack.duration || 0,
+              buffered: 0,
+            });
+
+            engine.load(nextTrack);
+            if (status === 'playing') {
+              engine.play();
+            }
+          } else {
+            set({
+              queue: newQueue,
+              originalQueue: newOriginal,
+            });
+          }
         },
 
         reorderQueue: (from, to) => {
           set((s) => {
+            if (
+              from < 0 ||
+              from >= s.queue.length ||
+              to < 0 ||
+              to >= s.queue.length ||
+              from === to
+            ) {
+              return s;
+            }
+
             const queue = [...s.queue];
             const moved = queue.splice(from, 1)[0]!;
             queue.splice(to, 0, moved);
-            let currentIndex = s.currentIndex;
+
+            let nextIndex = s.currentIndex;
             if (s.currentIndex === from) {
-              currentIndex = to;
+              nextIndex = to;
             } else if (from < s.currentIndex && to >= s.currentIndex) {
-              currentIndex -= 1;
+              nextIndex -= 1;
             } else if (from > s.currentIndex && to <= s.currentIndex) {
-              currentIndex += 1;
+              nextIndex += 1;
             }
-            return { queue, currentIndex };
+
+            return {
+              queue,
+              currentIndex: nextIndex,
+            };
+          });
+        },
+
+        clearQueue: () => {
+          const engine = getAudioEngine();
+          engine.pause();
+          set({
+            queue: [],
+            originalQueue: [],
+            currentIndex: -1,
+            status: 'idle',
+            currentTime: 0,
+            duration: 0,
+            buffered: 0,
+            error: null,
           });
         },
       }),
       {
-        name: 'duo-player-state',
-        // Only persist non-transient fields
+        name: 'duo-player-settings',
+        // Only persist preferences as required by spec: volume, isMuted, shuffle, repeat
         partialize: (s) => ({
-          queue: s.queue,
-          currentIndex: s.currentIndex,
           volume: s.volume,
           isMuted: s.isMuted,
           shuffle: s.shuffle,
           repeat: s.repeat,
-          // Position not persisted — resume from start
         }),
       }
     )
@@ -174,8 +512,111 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
 );
 
 // ─────────────────────────────────────────────
-//  Selectors (memoized)
+//  Granular Selectors (Prevent App-Wide Re-Renders)
 // ─────────────────────────────────────────────
 
-export const selectCurrentTrack = (s: PlayerState & PlayerActions): Track | null =>
+export const selectCurrentTrack = (s: PlayerState): Track | null =>
   s.queue[s.currentIndex] ?? null;
+
+export const selectIsPlaying = (s: PlayerState): boolean =>
+  s.status === 'playing';
+
+export const selectIsLoading = (s: PlayerState): boolean =>
+  s.status === 'loading';
+
+export const selectCurrentTime = (s: PlayerState): number =>
+  s.currentTime;
+
+export const selectDuration = (s: PlayerState): number =>
+  s.duration;
+
+export const selectBuffered = (s: PlayerState): number =>
+  s.buffered;
+
+export const selectVolume = (s: PlayerState): number =>
+  s.volume;
+
+export const selectIsMuted = (s: PlayerState): boolean =>
+  s.isMuted;
+
+export const selectShuffle = (s: PlayerState): boolean =>
+  s.shuffle;
+
+export const selectRepeat = (s: PlayerState): RepeatMode =>
+  s.repeat;
+
+export const selectStatus = (s: PlayerState): PlayerStatus =>
+  s.status;
+
+export const selectError = (s: PlayerState): string | null =>
+  s.error;
+
+// ─────────────────────────────────────────────
+//  Client AudioEngine Subscription
+// ─────────────────────────────────────────────
+
+let isEngineSubscribed = false;
+
+export function initAudioEngineSubscriptions(): void {
+  if (typeof window === 'undefined' || isEngineSubscribed) return;
+  isEngineSubscribed = true;
+
+  const engine = getAudioEngine();
+  const store = usePlayerStore;
+
+  // Apply persisted settings
+  const state = store.getState();
+  engine.setVolume(state.volume);
+  engine.setMuted(state.isMuted);
+
+  engine.on('timeupdate', ({ currentTime, duration }) => {
+    store.setState((s) => ({
+      currentTime,
+      duration: duration > 0 ? duration : s.duration,
+    }));
+  });
+
+  engine.on('durationchange', ({ duration }) => {
+    if (duration > 0) {
+      store.setState({ duration });
+    }
+  });
+
+  engine.on('play', () => {
+    store.setState({ status: 'playing', error: null });
+  });
+
+  engine.on('pause', () => {
+    store.setState((s) => (s.status === 'playing' ? { status: 'paused' } : s));
+  });
+
+  engine.on('waiting', () => {
+    store.setState((s) => (s.status === 'playing' ? { status: 'loading' } : s));
+  });
+
+  engine.on('canplay', () => {
+    store.setState((s) => (s.status === 'loading' ? { status: 'playing' } : s));
+  });
+
+  engine.on('bufferedchange', ({ buffered }) => {
+    store.setState({ buffered });
+  });
+
+  engine.on('ended', () => {
+    const s = store.getState();
+    if (s.repeat === 'one') {
+      engine.seek(0);
+      engine.play();
+      store.setState({ currentTime: 0, status: 'playing' });
+    } else {
+      s.next();
+    }
+  });
+
+  engine.on('error', ({ message, isAutoplayBlocked }) => {
+    store.setState({
+      status: isAutoplayBlocked ? 'paused' : 'error',
+      error: message,
+    });
+  });
+}
