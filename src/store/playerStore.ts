@@ -142,7 +142,6 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
         reorderQueue: (from, to) => {
           set((s) => {
             const queue = [...s.queue];
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
             const moved = queue.splice(from, 1)[0]!;
             queue.splice(to, 0, moved);
             let currentIndex = s.currentIndex;

@@ -21,7 +21,6 @@ export function PlayerBar() {
     shuffle,
     repeat,
     queue,
-    currentIndex,
     setPlaying,
     playNext,
     playPrev,
