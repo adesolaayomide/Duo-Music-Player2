@@ -1,5 +1,6 @@
 import { TopBar } from '@/components/layout/TopBar';
 import { SkeletonShelf } from '@/components/ui/Skeleton';
+import { DevPlayButton } from '@/lib/dev/DevPlayButton';
 
 export default function HomePage() {
   // Greeting based on time of day
@@ -13,7 +14,11 @@ export default function HomePage() {
 
       <div className="px-6 pb-24 flex flex-col gap-8 -mt-16 pt-20">
         {/* ── Greeting ───────────────────────────────── */}
-        <h1 className="text-2xl font-black text-text-primary">{greeting}</h1>
+        <div className="flex flex-col gap-4">
+          <h1 className="text-2xl font-black text-text-primary">{greeting}</h1>
+          {/* Temporary dev player fixture */}
+          <DevPlayButton />
+        </div>
 
         {/* ── Quick access 2×4 grid (placeholder) ──── */}
         <section aria-label="Quick access" className="grid grid-cols-2 sm:grid-cols-4 gap-3">

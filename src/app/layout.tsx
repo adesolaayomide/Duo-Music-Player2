@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" data-scroll-behavior="smooth" className={inter.variable}>
       <body className="bg-bg-base text-text-primary font-sans antialiased">
         <Providers>
           {/* Headless audio engine — never unmounts */}
