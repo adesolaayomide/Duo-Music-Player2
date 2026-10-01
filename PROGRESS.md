@@ -1,11 +1,13 @@
 # Duo Player — Progress
 
 ## Current Phase
+
 Phase 2 — Player Core ✅ COMPLETE
 
 ## Completed Tasks
 
 ### Phase 1 — Foundation ✅
+
 - [x] Project scaffolded: Next.js 16 App Router + TypeScript strict mode
 - [x] Tailwind v4 configured with `@theme` CSS-first design tokens
 - [x] CSS variables for all design tokens in `globals.css`
@@ -29,6 +31,7 @@ Phase 2 — Player Core ✅ COMPLETE
 - [x] PWA manifest at `public/manifest.json`
 
 ### Phase 2 — Player Core ✅
+
 - [x] **A. AudioEngine (`src/lib/audio/AudioEngine.ts`)**:
   - Singleton wrapping native `HTMLAudioElement`, created lazily client-side
   - Typed event emitter (`timeupdate`, `durationchange`, `ended`, `play`, `pause`, `waiting`, `canplay`, `error`, `bufferedchange`)
@@ -64,20 +67,25 @@ Phase 2 — Player Core ✅ COMPLETE
   - Extended Playwright smoke test: verifies playback across route navigation
 
 ## Dev Items for Phase 3 Removal
+
 - `public/dev-audio/` (sample WAV audio tracks)
 - `src/lib/dev/fixtures.ts` (dev tracks fixture)
 - `src/lib/dev/DevPlayButton.tsx` (sample queue button)
 - DevPlayButton reference in `src/app/page.tsx`
 
 ## Open Decisions
+
 - Queue persistence across app restarts: deferred to Phase 4 (Supabase persistent queue)
 - Draggable re-ordering in queue panel: UI reorder action ready, drag gesture interaction in Phase 5 polish
 
 ## Known Issues
+
 (none)
 
 ## Next Steps
+
 Phase 3 — Catalog:
+
 - Jamendo MusicProvider implementation with normalization to `Track`, `Album`, `Artist`
 - Home shelves ("Featured", "Popular", "Made for you", genre shelves)
 - Search view with debounced input and tabs (All / Tracks / Albums / Artists)
