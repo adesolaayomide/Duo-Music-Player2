@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback } from "react";
 import {
   usePlayerStore,
   selectCurrentTime,
   selectDuration,
   selectBuffered,
-} from '@/store/playerStore';
-import { formatDuration } from '@/lib/utils/helpers';
-import { cn } from '@/lib/utils/cn';
+} from "@/store/playerStore";
+import { formatDuration } from "@/lib/utils/helpers";
+import { cn } from "@/lib/utils/cn";
 
 interface ProgressBarProps {
   className?: string;
@@ -27,17 +27,24 @@ export function ProgressBar({ className, showTime = true }: ProgressBarProps) {
 
   // Time to display on the progress indicator
   const displayTime = isScrubbing ? scrubTime : currentTime;
-  const progressPercent = duration > 0 ? Math.min(100, Math.max(0, (displayTime / duration) * 100)) : 0;
-  const bufferedPercent = duration > 0 ? Math.min(100, Math.max(0, (buffered / duration) * 100)) : 0;
+  const progressPercent =
+    duration > 0
+      ? Math.min(100, Math.max(0, (displayTime / duration) * 100))
+      : 0;
+  const bufferedPercent =
+    duration > 0 ? Math.min(100, Math.max(0, (buffered / duration) * 100)) : 0;
 
   const calculateTimeFromPointer = useCallback(
     (clientX: number): number => {
       if (!barRef.current || duration <= 0) return 0;
       const rect = barRef.current.getBoundingClientRect();
-      const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const ratio = Math.max(
+        0,
+        Math.min(1, (clientX - rect.left) / rect.width),
+      );
       return ratio * duration;
     },
-    [duration]
+    [duration],
   );
 
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -67,23 +74,25 @@ export function ProgressBar({ className, showTime = true }: ProgressBarProps) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (duration <= 0) return;
 
-    if (e.key === 'ArrowRight') {
+    if (e.key === "ArrowRight") {
       e.preventDefault();
       seek(Math.min(duration, currentTime + 5));
-    } else if (e.key === 'ArrowLeft') {
+    } else if (e.key === "ArrowLeft") {
       e.preventDefault();
       seek(Math.max(0, currentTime - 5));
-    } else if (e.key === 'Home') {
+    } else if (e.key === "Home") {
       e.preventDefault();
       seek(0);
-    } else if (e.key === 'End') {
+    } else if (e.key === "End") {
       e.preventDefault();
       seek(duration);
     }
   };
 
   return (
-    <div className={cn('flex items-center gap-2 w-full select-none', className)}>
+    <div
+      className={cn("flex items-center gap-2 w-full select-none", className)}
+    >
       {showTime && (
         <span className="text-xs text-text-secondary tabular-nums min-w-[36px] text-right font-medium">
           {formatDuration(displayTime)}
@@ -105,8 +114,8 @@ export function ProgressBar({ className, showTime = true }: ProgressBarProps) {
         onPointerCancel={() => setIsScrubbing(false)}
         onKeyDown={handleKeyDown}
         className={cn(
-          'relative flex-1 h-3 flex items-center cursor-pointer group touch-none outline-none',
-          'focus-visible:ring-1 focus-visible:ring-accent rounded-full'
+          "relative flex-1 h-3 flex items-center cursor-pointer group touch-none outline-none",
+          "focus-visible:ring-1 focus-visible:ring-accent rounded-full",
         )}
       >
         {/* Track background */}
@@ -127,8 +136,10 @@ export function ProgressBar({ className, showTime = true }: ProgressBarProps) {
         {/* Scrub thumb */}
         <div
           className={cn(
-            'absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-md pointer-events-none transition-opacity duration-fast',
-            isScrubbing ? 'opacity-100 scale-110' : 'opacity-0 group-hover:opacity-100'
+            "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-md pointer-events-none transition-opacity duration-fast",
+            isScrubbing
+              ? "opacity-100 scale-110"
+              : "opacity-0 group-hover:opacity-100",
           )}
           style={{ left: `${progressPercent}%` }}
         />

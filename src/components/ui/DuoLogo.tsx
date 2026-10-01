@@ -7,12 +7,15 @@ interface DuoLogoProps {
 
 /**
  * Duo Player logo — original SVG mark.
- * The icon is two interlocking ovals (like a sound-wave / dual speaker), 
+ * The icon is two interlocking ovals (like a sound-wave / dual speaker),
  * in accent green. The wordmark is "duo" in a bold rounded font.
  */
 export function DuoLogo({ collapsed = false, size = 32 }: DuoLogoProps) {
   return (
-    <div className="flex items-center gap-2 select-none" aria-label="Duo Player">
+    <div
+      className="flex items-center gap-2 select-none"
+      aria-label="Duo Player"
+    >
       {/* Icon mark: two interlocking circles */}
       <svg
         width={size}
@@ -54,7 +57,10 @@ export function DuoLogo({ collapsed = false, size = 32 }: DuoLogoProps) {
       {!collapsed && (
         <span
           className="text-white font-black tracking-tight leading-none"
-          style={{ fontSize: '1.125rem', fontFamily: 'Inter, ui-sans-serif, system-ui' }}
+          style={{
+            fontSize: "1.125rem",
+            fontFamily: "Inter, ui-sans-serif, system-ui",
+          }}
         >
           duo
           <span className="text-accent">.</span>

@@ -26,7 +26,7 @@ export interface Track {
   licenseUrl?: string;
   genre?: string;
   /** Which provider owns this track */
-  provider: 'jamendo' | 'local';
+  provider: "jamendo" | "local";
   /** Raw provider ID for deep-linking back */
   providerTrackId: string;
 }
@@ -41,7 +41,7 @@ export interface Album {
   year?: number;
   genre?: string;
   tracks: Track[];
-  provider: 'jamendo' | 'local';
+  provider: "jamendo" | "local";
 }
 
 export interface Artist {
@@ -53,7 +53,7 @@ export interface Artist {
   topTracks: Track[];
   /** Albums from this artist */
   albums: Album[];
-  provider: 'jamendo' | 'local';
+  provider: "jamendo" | "local";
 }
 
 export interface Playlist {
@@ -75,8 +75,8 @@ export interface Playlist {
 //  Player State
 // ─────────────────────────────────────────────
 
-export type RepeatMode = 'off' | 'all' | 'one';
-export type PlayerStatus = 'idle' | 'loading' | 'playing' | 'paused' | 'error';
+export type RepeatMode = "off" | "all" | "one";
+export type PlayerStatus = "idle" | "loading" | "playing" | "paused" | "error";
 
 export interface PlayerState {
   /** Ordered list of tracks in the current active queue */
@@ -113,7 +113,7 @@ export interface SearchResults {
 }
 
 export interface MusicProvider {
-  readonly id: 'jamendo' | 'local';
+  readonly id: "jamendo" | "local";
   search(query: string): Promise<SearchResults>;
   getTrack(id: string): Promise<Track>;
   getAlbum(id: string): Promise<Album>;

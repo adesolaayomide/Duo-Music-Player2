@@ -1,5 +1,5 @@
-import * as React from 'react';
-import { cn } from '@/lib/utils/cn';
+import * as React from "react";
+import { cn } from "@/lib/utils/cn";
 
 // ─────────────────────────────────────────────
 //  Skeleton — single animated shimmer block
@@ -14,19 +14,26 @@ interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
   circle?: boolean;
 }
 
-export function Skeleton({ width, height, circle, className, style, ...rest }: SkeletonProps) {
+export function Skeleton({
+  width,
+  height,
+  circle,
+  className,
+  style,
+  ...rest
+}: SkeletonProps) {
   return (
     <div
       role="status"
       aria-label="Loading…"
       className={cn(
-        'animate-pulse bg-bg-hover',
-        circle ? 'rounded-full' : 'rounded-sm',
-        className
+        "animate-pulse bg-bg-hover",
+        circle ? "rounded-full" : "rounded-sm",
+        className,
       )}
       style={{
-        width: typeof width === 'number' ? `${width}px` : width,
-        height: typeof height === 'number' ? `${height}px` : height,
+        width: typeof width === "number" ? `${width}px` : width,
+        height: typeof height === "number" ? `${height}px` : height,
         ...style,
       }}
       {...rest}

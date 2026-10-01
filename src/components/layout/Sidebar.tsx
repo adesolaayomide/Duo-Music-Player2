@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Home,
   Search,
@@ -10,11 +10,11 @@ import {
   Heart,
   ChevronLeft,
   ChevronRight,
-} from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
-import { useUIStore } from '@/store/uiStore';
-import { DuoLogo } from '@/components/ui/DuoLogo';
-import { Button } from '@/components/ui/Button';
+} from "lucide-react";
+import { cn } from "@/lib/utils/cn";
+import { useUIStore } from "@/store/uiStore";
+import { DuoLogo } from "@/components/ui/DuoLogo";
+import { Button } from "@/components/ui/Button";
 
 // ─────────────────────────────────────────────
 //  Nav item definition
@@ -27,8 +27,8 @@ interface NavItem {
 }
 
 const mainNav: NavItem[] = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/search', label: 'Search', icon: Search },
+  { href: "/", label: "Home", icon: Home },
+  { href: "/search", label: "Search", icon: Search },
 ];
 
 // ─────────────────────────────────────────────
@@ -42,16 +42,16 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        'hidden md:flex flex-col bg-bg-base flex-shrink-0 transition-all duration-base overflow-hidden',
-        sidebarCollapsed ? 'w-[72px]' : 'w-[var(--sidebar-width)]'
+        "hidden md:flex flex-col bg-bg-base flex-shrink-0 transition-all duration-base overflow-hidden",
+        sidebarCollapsed ? "w-[72px]" : "w-[var(--sidebar-width)]",
       )}
       aria-label="Main navigation"
     >
       {/* ── Logo + collapse toggle ─────────────────── */}
       <div
         className={cn(
-          'flex items-center h-16 px-4 flex-shrink-0',
-          sidebarCollapsed ? 'justify-center' : 'justify-between'
+          "flex items-center h-16 px-4 flex-shrink-0",
+          sidebarCollapsed ? "justify-center" : "justify-between",
         )}
       >
         <Link href="/" aria-label="Duo Player home">
@@ -61,17 +61,26 @@ export function Sidebar() {
           variant="ghost"
           size="icon"
           onClick={toggleSidebar}
-          aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          className={cn('text-text-secondary', sidebarCollapsed && 'hidden')}
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className={cn("text-text-secondary", sidebarCollapsed && "hidden")}
         >
-          {sidebarCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          {sidebarCollapsed ? (
+            <ChevronRight size={16} />
+          ) : (
+            <ChevronLeft size={16} />
+          )}
         </Button>
       </div>
 
       {/* ── Top nav panel ─────────────────────────── */}
       <nav className="flex flex-col gap-1 px-2 bg-bg-elevated rounded-md mx-2 py-2">
         {mainNav.map((item) => (
-          <SidebarNavLink key={item.href} {...item} pathname={pathname} collapsed={sidebarCollapsed} />
+          <SidebarNavLink
+            key={item.href}
+            {...item}
+            pathname={pathname}
+            collapsed={sidebarCollapsed}
+          />
         ))}
       </nav>
 
@@ -80,8 +89,8 @@ export function Sidebar() {
         {/* Library header */}
         <div
           className={cn(
-            'flex items-center px-4 py-3 flex-shrink-0',
-            sidebarCollapsed ? 'justify-center' : 'justify-between'
+            "flex items-center px-4 py-3 flex-shrink-0",
+            sidebarCollapsed ? "justify-center" : "justify-between",
           )}
         >
           {!sidebarCollapsed && (
@@ -100,7 +109,12 @@ export function Sidebar() {
           )}
           {!sidebarCollapsed && (
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" aria-label="Create playlist" className="h-8 w-8">
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Create playlist"
+                className="h-8 w-8"
+              >
                 <Plus size={16} />
               </Button>
             </div>
@@ -161,19 +175,18 @@ function SidebarNavLink({
   return (
     <Link
       href={href}
-      aria-current={isActive ? 'page' : undefined}
+      aria-current={isActive ? "page" : undefined}
       className={cn(
-        'flex items-center gap-3 rounded-sm px-2 py-2 text-sm font-semibold transition-colors duration-fast',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
-        isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary',
-        collapsed ? 'justify-center' : ''
+        "flex items-center gap-3 rounded-sm px-2 py-2 text-sm font-semibold transition-colors duration-fast",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white",
+        isActive
+          ? "text-text-primary"
+          : "text-text-secondary hover:text-text-primary",
+        collapsed ? "justify-center" : "",
       )}
       title={collapsed ? label : undefined}
     >
-      <Icon
-        size={22}
-        className={cn('flex-shrink-0', iconClassName)}
-      />
+      <Icon size={22} className={cn("flex-shrink-0", iconClassName)} />
       {!collapsed && <span>{label}</span>}
     </Link>
   );

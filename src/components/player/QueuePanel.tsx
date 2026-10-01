@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { usePlayerStore, selectCurrentTrack } from '@/store/playerStore';
-import { formatDuration } from '@/lib/utils/helpers';
-import { X, Trash2, Music2 } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import { usePlayerStore, selectCurrentTrack } from "@/store/playerStore";
+import { formatDuration } from "@/lib/utils/helpers";
+import { X, Trash2, Music2 } from "lucide-react";
+import { cn } from "@/lib/utils/cn";
 
 interface QueuePanelProps {
   isOpen: boolean;
@@ -66,14 +66,15 @@ export function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
           </div>
         ) : (
           queue.map((track, idx) => {
-            const isCurrent = idx === currentIndex && track.id === currentTrack?.id;
+            const isCurrent =
+              idx === currentIndex && track.id === currentTrack?.id;
 
             return (
               <div
                 key={`${track.id}-${idx}`}
                 className={cn(
-                  'flex items-center justify-between px-3 py-2 text-xs hover:bg-bg-hover/60 transition-colors group',
-                  isCurrent && 'bg-accent/10'
+                  "flex items-center justify-between px-3 py-2 text-xs hover:bg-bg-hover/60 transition-colors group",
+                  isCurrent && "bg-accent/10",
                 )}
               >
                 <button
@@ -83,8 +84,8 @@ export function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
                 >
                   <span
                     className={cn(
-                      'w-5 text-right font-medium',
-                      isCurrent ? 'text-accent font-bold' : 'text-text-muted'
+                      "w-5 text-right font-medium",
+                      isCurrent ? "text-accent font-bold" : "text-text-muted",
                     )}
                   >
                     {idx + 1}
@@ -93,13 +94,15 @@ export function QueuePanel({ isOpen, onClose }: QueuePanelProps) {
                   <div className="min-w-0 flex-1">
                     <p
                       className={cn(
-                        'truncate font-semibold',
-                        isCurrent ? 'text-accent' : 'text-white'
+                        "truncate font-semibold",
+                        isCurrent ? "text-accent" : "text-white",
                       )}
                     >
                       {track.title}
                     </p>
-                    <p className="text-text-muted truncate">{track.artistName}</p>
+                    <p className="text-text-muted truncate">
+                      {track.artistName}
+                    </p>
                   </div>
                 </button>
 

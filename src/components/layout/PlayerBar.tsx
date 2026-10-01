@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import Image from 'next/image';
+import { useState } from "react";
+import Image from "next/image";
 import {
   Shuffle,
   SkipBack,
@@ -13,7 +13,7 @@ import {
   Heart,
   AlertCircle,
   RotateCcw,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   usePlayerStore,
   selectCurrentTrack,
@@ -21,13 +21,13 @@ import {
   selectRepeat,
   selectStatus,
   selectError,
-} from '@/store/playerStore';
-import { PlayButton } from '@/components/player/PlayButton';
-import { ProgressBar } from '@/components/player/ProgressBar';
-import { VolumeControl } from '@/components/player/VolumeControl';
-import { QueuePanel } from '@/components/player/QueuePanel';
-import { MiniPlayer } from '@/components/player/MiniPlayer';
-import { cn } from '@/lib/utils/cn';
+} from "@/store/playerStore";
+import { PlayButton } from "@/components/player/PlayButton";
+import { ProgressBar } from "@/components/player/ProgressBar";
+import { VolumeControl } from "@/components/player/VolumeControl";
+import { QueuePanel } from "@/components/player/QueuePanel";
+import { MiniPlayer } from "@/components/player/MiniPlayer";
+import { cn } from "@/lib/utils/cn";
 
 export function PlayerBar() {
   const currentTrack = usePlayerStore(selectCurrentTrack);
@@ -45,8 +45,8 @@ export function PlayerBar() {
   const [isQueueOpen, setIsQueueOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
 
-  const isIdle = status === 'idle' && !currentTrack;
-  const isError = status === 'error';
+  const isIdle = status === "idle" && !currentTrack;
+  const isError = status === "error";
 
   return (
     <>
@@ -93,13 +93,19 @@ export function PlayerBar() {
               <button
                 type="button"
                 onClick={() => setIsLiked(!isLiked)}
-                aria-label={isLiked ? 'Remove from your liked songs' : 'Save to your liked songs'}
+                aria-label={
+                  isLiked
+                    ? "Remove from your liked songs"
+                    : "Save to your liked songs"
+                }
                 className={cn(
-                  'p-1.5 rounded-full transition-colors flex-shrink-0',
-                  isLiked ? 'text-accent' : 'text-text-secondary hover:text-white'
+                  "p-1.5 rounded-full transition-colors flex-shrink-0",
+                  isLiked
+                    ? "text-accent"
+                    : "text-text-secondary hover:text-white",
                 )}
               >
-                <Heart size={18} fill={isLiked ? 'currentColor' : 'none'} />
+                <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
               </button>
             </>
           ) : (
@@ -108,8 +114,12 @@ export function PlayerBar() {
                 ♪
               </div>
               <div>
-                <p className="text-sm font-medium text-text-secondary">No track playing</p>
-                <p className="text-xs text-text-muted">Choose something to play</p>
+                <p className="text-sm font-medium text-text-secondary">
+                  No track playing
+                </p>
+                <p className="text-xs text-text-muted">
+                  Choose something to play
+                </p>
               </div>
             </div>
           )}
@@ -121,7 +131,9 @@ export function PlayerBar() {
           {isError && (
             <div className="flex items-center gap-2 text-xs text-danger font-medium bg-danger/10 px-2.5 py-0.5 rounded-full mb-0.5">
               <AlertCircle size={14} />
-              <span className="truncate max-w-[280px]">{error || 'Playback error'}</span>
+              <span className="truncate max-w-[280px]">
+                {error || "Playback error"}
+              </span>
               <button
                 type="button"
                 onClick={togglePlay}
@@ -135,16 +147,22 @@ export function PlayerBar() {
           )}
 
           {/* Control Buttons */}
-          <div className="flex items-center gap-3" role="group" aria-label="Playback controls">
+          <div
+            className="flex items-center gap-3"
+            role="group"
+            aria-label="Playback controls"
+          >
             <button
               type="button"
               onClick={toggleShuffle}
               disabled={isIdle}
-              aria-label={shuffle ? 'Disable shuffle' : 'Enable shuffle'}
+              aria-label={shuffle ? "Disable shuffle" : "Enable shuffle"}
               aria-pressed={shuffle}
               className={cn(
-                'relative p-1.5 rounded-full transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed',
-                shuffle ? 'text-accent' : 'text-text-secondary hover:text-white'
+                "relative p-1.5 rounded-full transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed",
+                shuffle
+                  ? "text-accent"
+                  : "text-text-secondary hover:text-white",
               )}
             >
               <Shuffle size={18} />
@@ -180,14 +198,16 @@ export function PlayerBar() {
               onClick={cycleRepeat}
               disabled={isIdle}
               aria-label={`Repeat mode: ${repeat}`}
-              aria-pressed={repeat !== 'off'}
+              aria-pressed={repeat !== "off"}
               className={cn(
-                'relative p-1.5 rounded-full transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed',
-                repeat !== 'off' ? 'text-accent' : 'text-text-secondary hover:text-white'
+                "relative p-1.5 rounded-full transition-colors duration-fast disabled:opacity-40 disabled:cursor-not-allowed",
+                repeat !== "off"
+                  ? "text-accent"
+                  : "text-text-secondary hover:text-white",
               )}
             >
-              {repeat === 'one' ? <Repeat1 size={18} /> : <Repeat size={18} />}
-              {repeat !== 'off' && (
+              {repeat === "one" ? <Repeat1 size={18} /> : <Repeat size={18} />}
+              {repeat !== "off" && (
                 <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-accent rounded-full" />
               )}
             </button>
@@ -205,8 +225,10 @@ export function PlayerBar() {
             aria-label="Toggle play queue"
             aria-expanded={isQueueOpen}
             className={cn(
-              'p-1.5 rounded-sm transition-colors duration-fast',
-              isQueueOpen ? 'text-accent' : 'text-text-secondary hover:text-white'
+              "p-1.5 rounded-sm transition-colors duration-fast",
+              isQueueOpen
+                ? "text-accent"
+                : "text-text-secondary hover:text-white",
             )}
           >
             <ListMusic size={18} />

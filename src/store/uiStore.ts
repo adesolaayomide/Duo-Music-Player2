@@ -1,11 +1,11 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 interface UIState {
   /** Whether the sidebar is collapsed to icon-rail mode */
   sidebarCollapsed: boolean;
   /** Whether the right Now Playing / Queue panel is open */
   rightPanelOpen: boolean;
-  rightPanelTab: 'nowplaying' | 'queue';
+  rightPanelTab: "nowplaying" | "queue";
   /** Whether the full-screen Now Playing overlay is open (mobile) */
   nowPlayingOpen: boolean;
   /** Active toast messages */
@@ -15,25 +15,25 @@ interface UIState {
 export interface Toast {
   id: string;
   message: string;
-  type: 'success' | 'error' | 'info';
+  type: "success" | "error" | "info";
   durationMs?: number;
 }
 
 interface UIActions {
   toggleSidebar: () => void;
   setSidebarCollapsed: (collapsed: boolean) => void;
-  toggleRightPanel: (tab?: 'nowplaying' | 'queue') => void;
-  setRightPanelTab: (tab: 'nowplaying' | 'queue') => void;
+  toggleRightPanel: (tab?: "nowplaying" | "queue") => void;
+  setRightPanelTab: (tab: "nowplaying" | "queue") => void;
   openNowPlaying: () => void;
   closeNowPlaying: () => void;
-  addToast: (toast: Omit<Toast, 'id'>) => void;
+  addToast: (toast: Omit<Toast, "id">) => void;
   removeToast: (id: string) => void;
 }
 
 export const useUIStore = create<UIState & UIActions>((set, get) => ({
   sidebarCollapsed: false,
   rightPanelOpen: false,
-  rightPanelTab: 'nowplaying',
+  rightPanelTab: "nowplaying",
   nowPlayingOpen: false,
   toasts: [],
 
@@ -61,5 +61,6 @@ export const useUIStore = create<UIState & UIActions>((set, get) => ({
     setTimeout(() => get().removeToast(id), toast.durationMs ?? 3000);
   },
 
-  removeToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  removeToast: (id) =>
+    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));

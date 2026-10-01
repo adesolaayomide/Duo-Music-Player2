@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 import {
   usePlayerStore,
   selectCurrentTrack,
@@ -8,14 +8,14 @@ import {
   selectCurrentTime,
   selectDuration,
   initAudioEngineSubscriptions,
-} from '@/store/playerStore';
+} from "@/store/playerStore";
 import {
   initMediaSession,
   updateMediaSessionMetadata,
   updateMediaSessionPlaybackState,
   updateMediaSessionPositionState,
-} from '@/lib/audio/mediaSession';
-import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
+} from "@/lib/audio/mediaSession";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 /**
  * AudioProvider — mounts once in the root layout and never unmounts.

@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import { useRouter } from 'next/navigation';
-import { ChevronLeft, ChevronRight, User } from 'lucide-react';
-import { Button } from '@/components/ui/Button';
+import React from "react";
+import { useRouter } from "next/navigation";
+import { ChevronLeft, ChevronRight, User } from "lucide-react";
+import { Button } from "@/components/ui/Button";
 
 interface TopBarProps {
   /** Optional gradient color inherited from page cover (hex or CSS color) */
   accentColor?: string;
+  children?: React.ReactNode;
 }
 
-export function TopBar({ accentColor }: TopBarProps) {
+export function TopBar({ accentColor, children }: TopBarProps) {
   const router = useRouter();
 
   return (
@@ -23,30 +25,34 @@ export function TopBar({ accentColor }: TopBarProps) {
           : undefined
       }
     >
-      {/* ── Back / Forward navigation ──────────────── */}
-      <div className="flex items-center gap-2">
-        <Button
-          variant="icon"
-          size="icon"
-          onClick={() => router.back()}
-          aria-label="Go back"
-          className="bg-black/40 hover:bg-black/60 text-white rounded-full h-8 w-8"
-        >
-          <ChevronLeft size={20} />
-        </Button>
-        <Button
-          variant="icon"
-          size="icon"
-          onClick={() => router.forward()}
-          aria-label="Go forward"
-          className="bg-black/40 hover:bg-black/60 text-white rounded-full h-8 w-8"
-        >
-          <ChevronRight size={20} />
-        </Button>
+      {/* ── Left: Navigation + Optional Search / Content ──── */}
+      <div className="flex items-center gap-4 flex-1 min-w-0 pr-4">
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            variant="icon"
+            size="icon"
+            onClick={() => router.back()}
+            aria-label="Go back"
+            className="bg-black/40 hover:bg-black/60 text-white rounded-full h-8 w-8"
+          >
+            <ChevronLeft size={20} />
+          </Button>
+          <Button
+            variant="icon"
+            size="icon"
+            onClick={() => router.forward()}
+            aria-label="Go forward"
+            className="bg-black/40 hover:bg-black/60 text-white rounded-full h-8 w-8"
+          >
+            <ChevronRight size={20} />
+          </Button>
+        </div>
+
+        {children && <div className="flex-1 max-w-md min-w-0">{children}</div>}
       </div>
 
-      {/* ── Right: user menu placeholder ───────────── */}
-      <div className="flex items-center gap-3">
+      {/* ── Right: User Menu Placeholder ─────────────────── */}
+      <div className="flex items-center gap-3 shrink-0">
         <Button
           variant="secondary"
           size="sm"

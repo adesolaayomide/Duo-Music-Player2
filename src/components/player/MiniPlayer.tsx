@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import { Heart } from 'lucide-react';
+import Image from "next/image";
+import { Heart } from "lucide-react";
 import {
   usePlayerStore,
   selectCurrentTrack,
   selectCurrentTime,
   selectDuration,
-} from '@/store/playerStore';
-import { PlayButton } from './PlayButton';
+} from "@/store/playerStore";
+import { PlayButton } from "./PlayButton";
 
 export function MiniPlayer() {
   const currentTrack = usePlayerStore(selectCurrentTrack);

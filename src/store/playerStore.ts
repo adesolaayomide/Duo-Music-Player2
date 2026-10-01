@@ -1,8 +1,8 @@
-import type { PlayerState, PlayerStatus, RepeatMode, Track } from '@/types';
-import { getAudioEngine } from '@/lib/audio/AudioEngine';
-import { useUIStore } from '@/store/uiStore';
-import { create } from 'zustand';
-import { persist, subscribeWithSelector } from 'zustand/middleware';
+import type { PlayerState, PlayerStatus, RepeatMode, Track } from "@/types";
+import { getAudioEngine } from "@/lib/audio/AudioEngine";
+import { useUIStore } from "@/store/uiStore";
+import { create } from "zustand";
+import { persist, subscribeWithSelector } from "zustand/middleware";
 
 // ─────────────────────────────────────────────
 //  Helper: Fisher-Yates Shuffle
@@ -68,14 +68,14 @@ const initialState: PlayerState = {
   queue: [],
   originalQueue: [],
   currentIndex: -1,
-  status: 'idle',
+  status: "idle",
   currentTime: 0,
   duration: 0,
   buffered: 0,
   volume: 0.8,
   isMuted: false,
   shuffle: false,
-  repeat: 'off',
+  repeat: "off",
   error: null,
 };
 
@@ -94,7 +94,8 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
 
         playTrack: (track, queueContext) => {
           const engine = getAudioEngine();
-          const baseQueue = queueContext && queueContext.length > 0 ? queueContext : [track];
+          const baseQueue =
+            queueContext && queueContext.length > 0 ? queueContext : [track];
           const { shuffle } = get();
 
           let activeQueue: Track[];
@@ -114,7 +115,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             queue: activeQueue,
             originalQueue: [...baseQueue],
             currentIndex: activeIndex,
-            status: 'loading',
+            status: "loading",
             currentTime: 0,
             duration: track.duration || 0,
             buffered: 0,
@@ -123,14 +124,17 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
 
           engine.load(track);
           engine.play().catch(() => {
-            set({ status: 'paused' });
+            set({ status: "paused" });
           });
         },
 
         playQueue: (tracks, startIndex = 0) => {
           if (!tracks || tracks.length === 0) return;
           const engine = getAudioEngine();
-          const safeIndex = Math.max(0, Math.min(startIndex, tracks.length - 1));
+          const safeIndex = Math.max(
+            0,
+            Math.min(startIndex, tracks.length - 1),
+          );
           const currentTrack = tracks[safeIndex]!;
           const { shuffle } = get();
 
@@ -150,7 +154,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             queue: activeQueue,
             originalQueue: [...tracks],
             currentIndex: activeIndex,
-            status: 'loading',
+            status: "loading",
             currentTime: 0,
             duration: currentTrack.duration || 0,
             buffered: 0,
@@ -159,7 +163,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
 
           engine.load(currentTrack);
           engine.play().catch(() => {
-            set({ status: 'paused' });
+            set({ status: "paused" });
           });
         },
 
@@ -167,13 +171,13 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
           const { status, queue, currentIndex, playQueue } = get();
           const engine = getAudioEngine();
 
-          if (status === 'idle') {
+          if (status === "idle") {
             if (queue.length > 0 && currentIndex >= 0) {
               const track = queue[currentIndex];
               if (track) {
                 engine.load(track);
                 engine.play();
-                set({ status: 'loading' });
+                set({ status: "loading" });
               }
             } else if (queue.length > 0) {
               playQueue(queue, 0);
@@ -181,12 +185,12 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             return;
           }
 
-          if (status === 'playing') {
+          if (status === "playing") {
             engine.pause();
-            set({ status: 'paused' });
-          } else if (status === 'paused' || status === 'error') {
+            set({ status: "paused" });
+          } else if (status === "paused" || status === "error") {
             engine.play();
-            set({ status: 'playing', error: null });
+            set({ status: "playing", error: null });
           }
         },
 
@@ -197,21 +201,21 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
           const engine = getAudioEngine();
 
           // repeat = 'one' replays current track
-          if (repeat === 'one') {
+          if (repeat === "one") {
             engine.seek(0);
             engine.play();
-            set({ currentTime: 0, status: 'playing', error: null });
+            set({ currentTime: 0, status: "playing", error: null });
             return;
           }
 
           const isLast = currentIndex === queue.length - 1;
 
           if (isLast) {
-            if (repeat === 'all') {
+            if (repeat === "all") {
               const nextTrack = queue[0]!;
               set({
                 currentIndex: 0,
-                status: 'loading',
+                status: "loading",
                 currentTime: 0,
                 duration: nextTrack.duration || 0,
                 buffered: 0,
@@ -229,7 +233,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
               }
               set({
                 currentIndex: 0,
-                status: 'paused',
+                status: "paused",
                 currentTime: 0,
                 buffered: 0,
                 error: null,
@@ -243,7 +247,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
           const nextTrack = queue[nextIndex]!;
           set({
             currentIndex: nextIndex,
-            status: 'loading',
+            status: "loading",
             currentTime: 0,
             duration: nextTrack.duration || 0,
             buffered: 0,
@@ -271,7 +275,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             const prevTrack = queue[prevIndex]!;
             set({
               currentIndex: prevIndex,
-              status: 'loading',
+              status: "loading",
               currentTime: 0,
               duration: prevTrack.duration || 0,
               buffered: 0,
@@ -331,7 +335,11 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
 
             const currentTrack = queue[currentIndex];
             if (!currentTrack) {
-              set({ shuffle: true, queue: fisherYatesShuffle(queue), currentIndex: 0 });
+              set({
+                shuffle: true,
+                queue: fisherYatesShuffle(queue),
+                currentIndex: 0,
+              });
               return;
             }
 
@@ -349,7 +357,9 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
 
             let restoredIndex = 0;
             if (currentTrack) {
-              const found = restoredQueue.findIndex((t) => t.id === currentTrack.id);
+              const found = restoredQueue.findIndex(
+                (t) => t.id === currentTrack.id,
+              );
               restoredIndex = found >= 0 ? found : 0;
             }
 
@@ -362,7 +372,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
         },
 
         cycleRepeat: () => {
-          const modes: RepeatMode[] = ['off', 'all', 'one'];
+          const modes: RepeatMode[] = ["off", "all", "one"];
           const current = get().repeat;
           const nextIndex = (modes.indexOf(current) + 1) % modes.length;
           const nextMode = modes[nextIndex]!;
@@ -401,7 +411,9 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
 
           const trackToRemove = queue[index];
           const newQueue = queue.filter((_, i) => i !== index);
-          const newOriginal = originalQueue.filter((t) => t.id !== trackToRemove?.id);
+          const newOriginal = originalQueue.filter(
+            (t) => t.id !== trackToRemove?.id,
+          );
 
           if (newQueue.length === 0) {
             const engine = getAudioEngine();
@@ -410,7 +422,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
               queue: [],
               originalQueue: [],
               currentIndex: -1,
-              status: 'idle',
+              status: "idle",
               currentTime: 0,
               duration: 0,
               buffered: 0,
@@ -440,7 +452,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             });
 
             engine.load(nextTrack);
-            if (status === 'playing') {
+            if (status === "playing") {
               engine.play();
             }
           } else {
@@ -490,7 +502,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             queue: [],
             originalQueue: [],
             currentIndex: -1,
-            status: 'idle',
+            status: "idle",
             currentTime: 0,
             duration: 0,
             buffered: 0,
@@ -499,7 +511,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
         },
       }),
       {
-        name: 'duo-player-settings',
+        name: "duo-player-settings",
         // Only persist preferences as required by spec: volume, isMuted, shuffle, repeat
         partialize: (s) => ({
           volume: s.volume,
@@ -507,9 +519,9 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
           shuffle: s.shuffle,
           repeat: s.repeat,
         }),
-      }
-    )
-  )
+      },
+    ),
+  ),
 );
 
 // ─────────────────────────────────────────────
@@ -520,37 +532,28 @@ export const selectCurrentTrack = (s: PlayerState): Track | null =>
   s.queue[s.currentIndex] ?? null;
 
 export const selectIsPlaying = (s: PlayerState): boolean =>
-  s.status === 'playing';
+  s.status === "playing";
 
 export const selectIsLoading = (s: PlayerState): boolean =>
-  s.status === 'loading';
+  s.status === "loading";
 
-export const selectCurrentTime = (s: PlayerState): number =>
-  s.currentTime;
+export const selectCurrentTime = (s: PlayerState): number => s.currentTime;
 
-export const selectDuration = (s: PlayerState): number =>
-  s.duration;
+export const selectDuration = (s: PlayerState): number => s.duration;
 
-export const selectBuffered = (s: PlayerState): number =>
-  s.buffered;
+export const selectBuffered = (s: PlayerState): number => s.buffered;
 
-export const selectVolume = (s: PlayerState): number =>
-  s.volume;
+export const selectVolume = (s: PlayerState): number => s.volume;
 
-export const selectIsMuted = (s: PlayerState): boolean =>
-  s.isMuted;
+export const selectIsMuted = (s: PlayerState): boolean => s.isMuted;
 
-export const selectShuffle = (s: PlayerState): boolean =>
-  s.shuffle;
+export const selectShuffle = (s: PlayerState): boolean => s.shuffle;
 
-export const selectRepeat = (s: PlayerState): RepeatMode =>
-  s.repeat;
+export const selectRepeat = (s: PlayerState): RepeatMode => s.repeat;
 
-export const selectStatus = (s: PlayerState): PlayerStatus =>
-  s.status;
+export const selectStatus = (s: PlayerState): PlayerStatus => s.status;
 
-export const selectError = (s: PlayerState): string | null =>
-  s.error;
+export const selectError = (s: PlayerState): string | null => s.error;
 
 // ─────────────────────────────────────────────
 //  Client AudioEngine Subscription
@@ -561,7 +564,7 @@ let lastPreloadedTrackId: string | null = null;
 let consecutiveErrorsCount = 0;
 
 export function initAudioEngineSubscriptions(): void {
-  if (typeof window === 'undefined' || isEngineSubscribed) return;
+  if (typeof window === "undefined" || isEngineSubscribed) return;
   isEngineSubscribed = true;
 
   const engine = getAudioEngine();
@@ -572,7 +575,7 @@ export function initAudioEngineSubscriptions(): void {
   engine.setVolume(state.volume);
   engine.setMuted(state.isMuted);
 
-  engine.on('timeupdate', ({ currentTime, duration }) => {
+  engine.on("timeupdate", ({ currentTime, duration }) => {
     store.setState((s) => ({
       currentTime,
       duration: duration > 0 ? duration : s.duration,
@@ -583,20 +586,24 @@ export function initAudioEngineSubscriptions(): void {
     const s = store.getState();
     const shouldCheckPreload =
       duration > 0 &&
-      (currentTime / duration >= 0.7 || (duration - currentTime <= 15 && duration > 20));
+      (currentTime / duration >= 0.7 ||
+        (duration - currentTime <= 15 && duration > 20));
 
-    if (shouldCheckPreload && s.repeat !== 'one') {
+    if (shouldCheckPreload && s.repeat !== "one") {
       // Check data-saver mode
       const isDataSaver =
-        typeof navigator !== 'undefined' &&
-        'connection' in navigator &&
-        Boolean((navigator as unknown as { connection?: { saveData?: boolean } }).connection?.saveData);
+        typeof navigator !== "undefined" &&
+        "connection" in navigator &&
+        Boolean(
+          (navigator as unknown as { connection?: { saveData?: boolean } })
+            .connection?.saveData,
+        );
 
       if (!isDataSaver) {
         let nextTrack: Track | undefined;
         if (s.currentIndex < s.queue.length - 1) {
           nextTrack = s.queue[s.currentIndex + 1];
-        } else if (s.repeat === 'all' && s.queue.length > 1) {
+        } else if (s.repeat === "all" && s.queue.length > 1) {
           nextTrack = s.queue[0];
         }
 
@@ -608,50 +615,50 @@ export function initAudioEngineSubscriptions(): void {
     }
   });
 
-  engine.on('durationchange', ({ duration }) => {
+  engine.on("durationchange", ({ duration }) => {
     if (duration > 0) {
       store.setState({ duration });
     }
   });
 
-  engine.on('play', () => {
+  engine.on("play", () => {
     consecutiveErrorsCount = 0;
-    store.setState({ status: 'playing', error: null });
+    store.setState({ status: "playing", error: null });
   });
 
-  engine.on('canplay', () => {
+  engine.on("canplay", () => {
     consecutiveErrorsCount = 0;
-    store.setState((s) => (s.status === 'loading' ? { status: 'playing' } : s));
+    store.setState((s) => (s.status === "loading" ? { status: "playing" } : s));
   });
 
-  engine.on('pause', () => {
-    store.setState((s) => (s.status === 'playing' ? { status: 'paused' } : s));
+  engine.on("pause", () => {
+    store.setState((s) => (s.status === "playing" ? { status: "paused" } : s));
   });
 
-  engine.on('waiting', () => {
-    store.setState((s) => (s.status === 'playing' ? { status: 'loading' } : s));
+  engine.on("waiting", () => {
+    store.setState((s) => (s.status === "playing" ? { status: "loading" } : s));
   });
 
-  engine.on('bufferedchange', ({ buffered }) => {
+  engine.on("bufferedchange", ({ buffered }) => {
     store.setState({ buffered });
   });
 
-  engine.on('ended', () => {
+  engine.on("ended", () => {
     const s = store.getState();
     lastPreloadedTrackId = null;
-    if (s.repeat === 'one') {
+    if (s.repeat === "one") {
       engine.seek(0);
       engine.play();
-      store.setState({ currentTime: 0, status: 'playing' });
+      store.setState({ currentTime: 0, status: "playing" });
     } else {
       s.next();
     }
   });
 
-  engine.on('error', ({ message, isAutoplayBlocked }) => {
+  engine.on("error", ({ message, isAutoplayBlocked }) => {
     if (isAutoplayBlocked) {
       store.setState({
-        status: 'paused',
+        status: "paused",
         error: message,
       });
       return;
@@ -665,22 +672,22 @@ export function initAudioEngineSubscriptions(): void {
       // All tracks failed, or only single track failed. Halt to avoid infinite loop.
       consecutiveErrorsCount = 0;
       store.setState({
-        status: 'error',
+        status: "error",
         error: message,
       });
       useUIStore.getState().addToast({
-        type: 'error',
-        message: `Playback stopped: ${currentTrack ? currentTrack.title : 'Track'} could not be played.`,
+        type: "error",
+        message: `Playback stopped: ${currentTrack ? currentTrack.title : "Track"} could not be played.`,
       });
     } else {
       // Skip to next track
       store.setState({
-        status: 'loading',
+        status: "loading",
         error: message,
       });
       useUIStore.getState().addToast({
-        type: 'error',
-        message: `Error playing "${currentTrack?.title || 'track'}". Skipping to next...`,
+        type: "error",
+        message: `Error playing "${currentTrack?.title || "track"}". Skipping to next...`,
       });
       s.next();
     }

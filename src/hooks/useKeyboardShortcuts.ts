@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import { usePlayerStore } from '@/store/playerStore';
+import { useEffect } from "react";
+import { usePlayerStore } from "@/store/playerStore";
 
 /**
  * Global keyboard shortcuts hook for Duo Player.
@@ -28,9 +28,9 @@ export function useKeyboardShortcuts(): void {
       if (target) {
         const tagName = target.tagName?.toLowerCase();
         if (
-          tagName === 'input' ||
-          tagName === 'textarea' ||
-          tagName === 'select' ||
+          tagName === "input" ||
+          tagName === "textarea" ||
+          tagName === "select" ||
           target.isContentEditable
         ) {
           return;
@@ -40,13 +40,13 @@ export function useKeyboardShortcuts(): void {
       const store = usePlayerStore.getState();
 
       switch (e.code) {
-        case 'Space': {
+        case "Space": {
           e.preventDefault(); // Stop page scrolling
           store.togglePlay();
           break;
         }
 
-        case 'ArrowRight': {
+        case "ArrowRight": {
           e.preventDefault();
           if (e.shiftKey) {
             store.next();
@@ -56,7 +56,7 @@ export function useKeyboardShortcuts(): void {
           break;
         }
 
-        case 'ArrowLeft': {
+        case "ArrowLeft": {
           e.preventDefault();
           if (e.shiftKey) {
             store.previous();
@@ -66,19 +66,19 @@ export function useKeyboardShortcuts(): void {
           break;
         }
 
-        case 'ArrowUp': {
+        case "ArrowUp": {
           e.preventDefault();
           store.setVolume(Math.min(1, store.volume + 0.05));
           break;
         }
 
-        case 'ArrowDown': {
+        case "ArrowDown": {
           e.preventDefault();
           store.setVolume(Math.max(0, store.volume - 0.05));
           break;
         }
 
-        case 'KeyM': {
+        case "KeyM": {
           if (!e.metaKey && !e.ctrlKey && !e.altKey) {
             e.preventDefault();
             store.toggleMute();
@@ -86,7 +86,7 @@ export function useKeyboardShortcuts(): void {
           break;
         }
 
-        case 'KeyS': {
+        case "KeyS": {
           if (!e.metaKey && !e.ctrlKey && !e.altKey) {
             e.preventDefault();
             store.toggleShuffle();
@@ -94,7 +94,7 @@ export function useKeyboardShortcuts(): void {
           break;
         }
 
-        case 'KeyR': {
+        case "KeyR": {
           if (!e.metaKey && !e.ctrlKey && !e.altKey) {
             e.preventDefault();
             store.cycleRepeat();
@@ -107,9 +107,9 @@ export function useKeyboardShortcuts(): void {
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 }

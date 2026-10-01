@@ -1,5 +1,5 @@
-import { TopBar } from '@/components/layout/TopBar';
-import { Heart } from 'lucide-react';
+import { TopBar } from "@/components/layout/TopBar";
+import { Heart } from "lucide-react";
 
 export default function LikedSongsPage() {
   return (
@@ -8,7 +8,8 @@ export default function LikedSongsPage() {
       <div
         className="px-6 py-6 -mt-16 pt-20"
         style={{
-          background: 'linear-gradient(to bottom, #5038a080 0%, transparent 300px)',
+          background:
+            "linear-gradient(to bottom, #5038a080 0%, transparent 300px)",
         }}
       >
         <div className="flex items-end gap-6 mb-8">
@@ -19,7 +20,9 @@ export default function LikedSongsPage() {
             <p className="text-xs font-semibold uppercase text-text-secondary tracking-widest mb-2">
               Playlist
             </p>
-            <h1 className="text-4xl font-black text-text-primary mb-4">Liked Songs</h1>
+            <h1 className="text-4xl font-black text-text-primary mb-4">
+              Liked Songs
+            </h1>
             <p className="text-text-secondary text-sm">
               Sign in to see your liked songs.
             </p>

@@ -1,9 +1,13 @@
-'use client';
+"use client";
 
-import { useState, useRef, useCallback } from 'react';
-import { Volume2, Volume1, VolumeX } from 'lucide-react';
-import { usePlayerStore, selectVolume, selectIsMuted } from '@/store/playerStore';
-import { cn } from '@/lib/utils/cn';
+import { useState, useRef, useCallback } from "react";
+import { Volume2, Volume1, VolumeX } from "lucide-react";
+import {
+  usePlayerStore,
+  selectVolume,
+  selectIsMuted,
+} from "@/store/playerStore";
+import { cn } from "@/lib/utils/cn";
 
 interface VolumeControlProps {
   className?: string;
@@ -55,16 +59,16 @@ export function VolumeControl({ className }: VolumeControlProps) {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+    if (e.key === "ArrowUp" || e.key === "ArrowRight") {
       e.preventDefault();
       setVolume(Math.min(1, volume + 0.05));
-    } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+    } else if (e.key === "ArrowDown" || e.key === "ArrowLeft") {
       e.preventDefault();
       setVolume(Math.max(0, volume - 0.05));
-    } else if (e.key === 'Home') {
+    } else if (e.key === "Home") {
       e.preventDefault();
       setVolume(0);
-    } else if (e.key === 'End') {
+    } else if (e.key === "End") {
       e.preventDefault();
       setVolume(1);
     }
@@ -81,11 +85,11 @@ export function VolumeControl({ className }: VolumeControlProps) {
   };
 
   return (
-    <div className={cn('flex items-center gap-2 group', className)}>
+    <div className={cn("flex items-center gap-2 group", className)}>
       <button
         type="button"
         onClick={toggleMute}
-        aria-label={isMuted ? 'Unmute' : 'Mute'}
+        aria-label={isMuted ? "Unmute" : "Mute"}
         className="text-text-secondary hover:text-white transition-colors duration-fast p-1 rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
       >
         {renderIcon()}
@@ -106,8 +110,8 @@ export function VolumeControl({ className }: VolumeControlProps) {
         onPointerCancel={() => setIsDragging(false)}
         onKeyDown={handleKeyDown}
         className={cn(
-          'relative w-24 h-3 flex items-center cursor-pointer touch-none outline-none',
-          'focus-visible:ring-1 focus-visible:ring-accent rounded-full'
+          "relative w-24 h-3 flex items-center cursor-pointer touch-none outline-none",
+          "focus-visible:ring-1 focus-visible:ring-accent rounded-full",
         )}
       >
         {/* Track */}
@@ -121,8 +125,10 @@ export function VolumeControl({ className }: VolumeControlProps) {
         {/* Thumb */}
         <div
           className={cn(
-            'absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-md pointer-events-none transition-opacity duration-fast',
-            isDragging ? 'opacity-100 scale-110' : 'opacity-0 group-hover:opacity-100'
+            "absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full shadow-md pointer-events-none transition-opacity duration-fast",
+            isDragging
+              ? "opacity-100 scale-110"
+              : "opacity-0 group-hover:opacity-100",
           )}
           style={{ left: `${percent}%` }}
         />

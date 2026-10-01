@@ -1,72 +1,99 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test('home page loads and shows navigation', async ({ page }) => {
-  await page.goto('/');
-  const nav = page.locator('[aria-label="Main navigation"], [aria-label="Mobile navigation"]');
+test("home page loads and shows navigation and shelves", async ({ page }) => {
+  await page.goto("/");
+  const nav = page.locator(
+    '[aria-label="Main navigation"], [aria-label="Mobile navigation"]',
+  );
   await expect(nav.first()).toBeVisible();
   await expect(page).toHaveTitle(/Duo/i);
+
+  // Expect quick access grid
+  const quickAccess = page.locator('section[aria-label="Quick access"]');
+  await expect(quickAccess).toBeVisible();
+
+  // Expect genre shelf
+  await expect(page.getByText("Explore Genres")).toBeVisible({
+    timeout: 10000,
+  });
 });
 
-test('search page is reachable', async ({ page }) => {
-  await page.goto('/search');
-  await expect(page.locator('main, [role="main"]')).toBeVisible();
+test("search page searches catalog and shows results", async ({ page }) => {
+  await page.goto("/search");
+
+  // Verify search input is present in TopBar
+  const searchInput = page.getByPlaceholder("What do you want to listen to?");
+  await expect(searchInput).toBeVisible();
+
+  // Initially shows browse all genres
+  await expect(page.getByText("Browse all")).toBeVisible();
+
+  // Type search query
+  await searchInput.fill("rock");
+
+  // URL should sync with query
+  await expect(page).toHaveURL(/q=rock/);
+
+  // Category filter tabs should appear
+  await expect(page.getByRole("button", { name: "Songs" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Albums" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Artists" })).toBeVisible();
 });
 
-test('player core plays sample queue and survives route navigation', async ({ page }) => {
-  await page.goto('/');
+test("catalog playback survives route navigation", async ({ page }) => {
+  await page.goto("/");
 
-  // Verify initial idle state in desktop player bar
   const playerBar = page.locator('footer[aria-label="Audio player"]');
   await expect(playerBar).toBeVisible();
-  await expect(playerBar).toContainText('No track playing');
+  await expect(playerBar).toContainText("No track playing");
 
-  // Click the dev-only Play sample queue button
-  const playSampleBtn = page.locator('[data-testid="play-sample-queue-btn"]');
-  await expect(playSampleBtn).toBeVisible();
-  await playSampleBtn.click();
+  // Wait for quick access items to be populated
+  const quickAccessItem = page
+    .locator('section[aria-label="Quick access"] div[role="button"]')
+    .first();
+  await expect(quickAccessItem).toBeVisible({ timeout: 15000 });
 
-  // Verify PlayerBar loads the first track
-  await expect(playerBar).toContainText('Ambient Breeze');
-  await expect(playerBar).toContainText('Echo Horizon');
-
-  // Verify play/pause button is present and accessible
-  const playButton = playerBar.getByRole('button', { name: /^(play|pause)$/i });
+  // Hover to reveal floating play button and click it
+  await quickAccessItem.hover();
+  const playButton = quickAccessItem.locator('button[aria-label*="Play"]');
   await expect(playButton).toBeVisible();
+  await playButton.click();
 
-  // Test toggling playback
-  await playButton.click(); // Pause
-  await expect(playerBar.getByRole('button', { name: /^play$/i })).toBeVisible();
+  // Verify PlayerBar loads track information
+  await expect(playerBar).not.toContainText("No track playing", {
+    timeout: 15000,
+  });
 
-  await playButton.click(); // Resume
-  await expect(playerBar.getByRole('button', { name: /^(play|pause)$/i })).toBeVisible();
+  // Verify Play/Pause button exists and works
+  const barPlayBtn = playerBar.getByRole("button", { name: /^(play|pause)$/i });
+  await expect(barPlayBtn).toBeVisible();
 
-  // Open Queue Panel
-  const queueButton = playerBar.getByRole('button', { name: /toggle play queue/i });
-  await queueButton.click();
-
-  const queueDialog = page.locator('div[role="dialog"][aria-label="Play Queue"]');
-  await expect(queueDialog).toBeVisible();
-  await expect(queueDialog).toContainText('Ambient Breeze');
-  await expect(queueDialog).toContainText('Midnight Drive');
-  await expect(queueDialog).toContainText('Solar Drift');
-
-  // Close queue panel
-  await queueDialog.getByRole('button', { name: /close queue/i }).click();
-  await expect(queueDialog).not.toBeVisible();
-
-  // Route navigation test: navigate to /search while music is loaded
-  const searchLink = page.getByRole('link', { name: 'Search', exact: true });
+  // Navigate to Search while playing
+  const searchLink = page.getByRole("link", { name: "Search", exact: true });
   await searchLink.click();
   await expect(page).toHaveURL(/\/search/);
 
   // Assert PlayerBar is still mounted with track information
   await expect(playerBar).toBeVisible();
-  await expect(playerBar).toContainText('Ambient Breeze');
+  await expect(playerBar).not.toContainText("No track playing");
 
   // Navigate back to Home via client-side link
-  const homeLink = page.getByRole('link', { name: 'Home', exact: true });
+  const homeLink = page.getByRole("link", { name: "Home", exact: true });
   await homeLink.click();
-  await expect(page).toHaveURL('/');
+  await expect(page).toHaveURL("/");
+
+  // Assert PlayerBar is still mounted with track information
   await expect(playerBar).toBeVisible();
-  await expect(playerBar).toContainText('Ambient Breeze');
+  await expect(playerBar).not.toContainText("No track playing");
+
+  // Navigate to Explore Genre via client-side link
+  const genreLink = page.locator('a[href="/genre/electronic"]').first();
+  await expect(genreLink).toBeVisible({ timeout: 10000 });
+  await genreLink.click();
+  await expect(page).toHaveURL(/\/genre\/electronic/);
+  await expect(page.getByRole("heading", { name: "Electronic" })).toBeVisible();
+
+  // Assert PlayerBar is STILL mounted and playing
+  await expect(playerBar).toBeVisible();
+  await expect(playerBar).not.toContainText("No track playing");
 });

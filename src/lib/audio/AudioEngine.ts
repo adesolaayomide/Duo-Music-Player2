@@ -1,4 +1,4 @@
-import type { Track } from '@/types';
+import type { Track } from "@/types";
 
 // ─────────────────────────────────────────────
 //  Typed Audio Events
@@ -36,7 +36,7 @@ export class AudioEngine {
   private isDestroyed = false;
 
   private constructor() {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       this.initAudio();
     }
   }
@@ -49,26 +49,26 @@ export class AudioEngine {
   }
 
   private initAudio(): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     this.audio = new Audio();
-    this.audio.preload = 'auto';
+    this.audio.preload = "auto";
 
     // DOM event bindings
-    this.audio.addEventListener('timeupdate', this.handleTimeUpdate);
-    this.audio.addEventListener('durationchange', this.handleDurationChange);
-    this.audio.addEventListener('play', this.handlePlay);
-    this.audio.addEventListener('pause', this.handlePause);
-    this.audio.addEventListener('waiting', this.handleWaiting);
-    this.audio.addEventListener('canplay', this.handleCanPlay);
-    this.audio.addEventListener('ended', this.handleEnded);
-    this.audio.addEventListener('progress', this.handleProgress);
-    this.audio.addEventListener('error', this.handleAudioError);
-    this.audio.addEventListener('stalled', this.handleStalled);
+    this.audio.addEventListener("timeupdate", this.handleTimeUpdate);
+    this.audio.addEventListener("durationchange", this.handleDurationChange);
+    this.audio.addEventListener("play", this.handlePlay);
+    this.audio.addEventListener("pause", this.handlePause);
+    this.audio.addEventListener("waiting", this.handleWaiting);
+    this.audio.addEventListener("canplay", this.handleCanPlay);
+    this.audio.addEventListener("ended", this.handleEnded);
+    this.audio.addEventListener("progress", this.handleProgress);
+    this.audio.addEventListener("error", this.handleAudioError);
+    this.audio.addEventListener("stalled", this.handleStalled);
   }
 
   private ensureAudio(): HTMLAudioElement | null {
-    if (typeof window === 'undefined') return null;
+    if (typeof window === "undefined") return null;
     if (!this.audio) {
       this.initAudio();
     }
@@ -111,22 +111,23 @@ export class AudioEngine {
 
       if (err instanceof Error) {
         // AbortError is benign (rapid track switch or immediate pause)
-        if (err.name === 'AbortError') {
+        if (err.name === "AbortError") {
           return;
         }
 
         // NotAllowedError indicates autoplay policy restriction
-        if (err.name === 'NotAllowedError') {
-          this.emit('error', {
-            message: 'Playback blocked by browser autoplay policy. Tap play to listen.',
+        if (err.name === "NotAllowedError") {
+          this.emit("error", {
+            message:
+              "Playback blocked by browser autoplay policy. Tap play to listen.",
             isAutoplayBlocked: true,
           });
           return;
         }
 
-        this.emit('error', { message: err.message });
+        this.emit("error", { message: err.message });
       } else {
-        this.emit('error', { message: 'An unknown playback error occurred.' });
+        this.emit("error", { message: "An unknown playback error occurred." });
       }
     }
   }
@@ -176,12 +177,12 @@ export class AudioEngine {
 
   /** Preload the next track in a separate hidden audio element */
   public preload(track: Track): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === "undefined") return;
 
     // Create preload element if not yet instantiated
     if (!this.preloadAudio) {
       this.preloadAudio = new Audio();
-      this.preloadAudio.preload = 'auto';
+      this.preloadAudio.preload = "auto";
     }
 
     if (this.preloadAudio.src !== track.audioUrl) {
@@ -195,22 +196,25 @@ export class AudioEngine {
     this.isDestroyed = true;
     if (this.audio) {
       this.audio.pause();
-      this.audio.src = '';
-      this.audio.removeEventListener('timeupdate', this.handleTimeUpdate);
-      this.audio.removeEventListener('durationchange', this.handleDurationChange);
-      this.audio.removeEventListener('play', this.handlePlay);
-      this.audio.removeEventListener('pause', this.handlePause);
-      this.audio.removeEventListener('waiting', this.handleWaiting);
-      this.audio.removeEventListener('canplay', this.handleCanPlay);
-      this.audio.removeEventListener('ended', this.handleEnded);
-      this.audio.removeEventListener('progress', this.handleProgress);
-      this.audio.removeEventListener('error', this.handleAudioError);
-      this.audio.removeEventListener('stalled', this.handleStalled);
+      this.audio.src = "";
+      this.audio.removeEventListener("timeupdate", this.handleTimeUpdate);
+      this.audio.removeEventListener(
+        "durationchange",
+        this.handleDurationChange,
+      );
+      this.audio.removeEventListener("play", this.handlePlay);
+      this.audio.removeEventListener("pause", this.handlePause);
+      this.audio.removeEventListener("waiting", this.handleWaiting);
+      this.audio.removeEventListener("canplay", this.handleCanPlay);
+      this.audio.removeEventListener("ended", this.handleEnded);
+      this.audio.removeEventListener("progress", this.handleProgress);
+      this.audio.removeEventListener("error", this.handleAudioError);
+      this.audio.removeEventListener("stalled", this.handleStalled);
       this.audio = null;
     }
 
     if (this.preloadAudio) {
-      this.preloadAudio.src = '';
+      this.preloadAudio.src = "";
       this.preloadAudio = null;
     }
 
@@ -220,7 +224,10 @@ export class AudioEngine {
 
   // ── Event Emitter ────────────────────────────────────────
 
-  public on<K extends EventKey>(event: K, listener: EventListener<K>): () => void {
+  public on<K extends EventKey>(
+    event: K,
+    listener: EventListener<K>,
+  ): () => void {
     let set = this.listeners.get(event);
     if (!set) {
       set = new Set();
@@ -250,7 +257,7 @@ export class AudioEngine {
 
   private handleTimeUpdate = (): void => {
     if (!this.audio) return;
-    this.emit('timeupdate', {
+    this.emit("timeupdate", {
       currentTime: this.audio.currentTime || 0,
       duration: this.audio.duration || (this.currentTrack?.duration ?? 0),
     });
@@ -260,28 +267,28 @@ export class AudioEngine {
     if (!this.audio) return;
     const dur = this.audio.duration;
     if (Number.isFinite(dur) && dur > 0) {
-      this.emit('durationchange', { duration: dur });
+      this.emit("durationchange", { duration: dur });
     }
   };
 
   private handlePlay = (): void => {
-    this.emit('play', undefined as void);
+    this.emit("play", undefined as void);
   };
 
   private handlePause = (): void => {
-    this.emit('pause', undefined as void);
+    this.emit("pause", undefined as void);
   };
 
   private handleWaiting = (): void => {
-    this.emit('waiting', undefined as void);
+    this.emit("waiting", undefined as void);
   };
 
   private handleCanPlay = (): void => {
-    this.emit('canplay', undefined as void);
+    this.emit("canplay", undefined as void);
   };
 
   private handleEnded = (): void => {
-    this.emit('ended', undefined as void);
+    this.emit("ended", undefined as void);
   };
 
   private handleProgress = (): void => {
@@ -301,7 +308,7 @@ export class AudioEngine {
           bufferedEnd = end;
         }
       }
-      this.emit('bufferedchange', { buffered: bufferedEnd });
+      this.emit("bufferedchange", { buffered: bufferedEnd });
     }
   };
 
@@ -323,22 +330,26 @@ export class AudioEngine {
     }
 
     const code = this.audio.error?.code;
-    let message = 'Failed to load audio track.';
+    let message = "Failed to load audio track.";
     if (code === MediaError.MEDIA_ERR_NETWORK) {
-      message = 'A network error occurred while loading audio.';
+      message = "A network error occurred while loading audio.";
     } else if (code === MediaError.MEDIA_ERR_DECODE) {
-      message = 'An error occurred while decoding audio.';
+      message = "An error occurred while decoding audio.";
     } else if (code === MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED) {
-      message = 'Audio format not supported or stream unavailable.';
+      message = "Audio format not supported or stream unavailable.";
     }
 
-    this.emit('error', { message });
+    this.emit("error", { message });
   };
 
   private handleStalled = (): void => {
     // If stalled and hasn't started playing, emit waiting
-    if (this.audio && !this.audio.paused && this.audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA) {
-      this.emit('waiting', undefined as void);
+    if (
+      this.audio &&
+      !this.audio.paused &&
+      this.audio.readyState < HTMLMediaElement.HAVE_FUTURE_DATA
+    ) {
+      this.emit("waiting", undefined as void);
     }
   };
 }
