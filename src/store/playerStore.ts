@@ -1,6 +1,7 @@
 import type { PlayerState, PlayerStatus, RepeatMode, Track } from "@/types";
 import { getAudioEngine } from "@/lib/audio/AudioEngine";
 import { useUIStore } from "@/store/uiStore";
+import { useRecentlyPlayedStore } from "@/hooks/useRecentlyPlayed";
 import { create } from "zustand";
 import { persist, subscribeWithSelector } from "zustand/middleware";
 
@@ -123,6 +124,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
           });
 
           engine.load(track);
+          useRecentlyPlayedStore.getState().recordPlayed(track);
           engine.play().catch(() => {
             set({ status: "paused" });
           });
@@ -162,6 +164,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
           });
 
           engine.load(currentTrack);
+          useRecentlyPlayedStore.getState().recordPlayed(currentTrack);
           engine.play().catch(() => {
             set({ status: "paused" });
           });
@@ -222,6 +225,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
                 error: null,
               });
               engine.load(nextTrack);
+              useRecentlyPlayedStore.getState().recordPlayed(nextTrack);
               engine.play();
             } else {
               // repeat === 'off': stop and reset to first track paused
@@ -254,6 +258,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
             error: null,
           });
           engine.load(nextTrack);
+          useRecentlyPlayedStore.getState().recordPlayed(nextTrack);
           engine.play();
         },
 
@@ -282,6 +287,7 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
               error: null,
             });
             engine.load(prevTrack);
+            useRecentlyPlayedStore.getState().recordPlayed(prevTrack);
             engine.play();
           } else {
             // At first track, restart it
@@ -512,13 +518,30 @@ export const usePlayerStore = create<PlayerState & PlayerActions>()(
       }),
       {
         name: "duo-player-settings",
-        // Only persist preferences as required by spec: volume, isMuted, shuffle, repeat
         partialize: (s) => ({
           volume: s.volume,
           isMuted: s.isMuted,
           shuffle: s.shuffle,
           repeat: s.repeat,
+          queue: s.queue,
+          originalQueue: s.originalQueue,
+          currentIndex: s.currentIndex,
         }),
+        onRehydrateStorage: () => (state) => {
+          if (
+            state &&
+            state.queue &&
+            state.queue.length > 0 &&
+            state.currentIndex >= 0 &&
+            state.currentIndex < state.queue.length
+          ) {
+            state.status = "paused";
+            const cur = state.queue[state.currentIndex];
+            if (cur) {
+              state.duration = cur.duration || 0;
+            }
+          }
+        },
       },
     ),
   ),

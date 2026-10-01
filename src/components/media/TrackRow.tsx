@@ -13,10 +13,16 @@ import {
   Disc,
   User,
   ShieldCheck,
+  FolderPlus,
+  Plus,
+  Trash2,
 } from "lucide-react";
 import { formatDuration } from "@/lib/utils/helpers";
 import { LicenseDialog } from "./LicenseDialog";
+import { PlaylistModal } from "./PlaylistModal";
 import { usePlayerStore } from "@/store/playerStore";
+import { useLikedSongs } from "@/hooks/useLikedSongs";
+import { usePlaylists } from "@/hooks/usePlaylists";
 import type { Track } from "@/types";
 
 interface TrackRowProps {
@@ -25,6 +31,8 @@ interface TrackRowProps {
   contextQueue?: Track[];
   showAlbum?: boolean;
   showCover?: boolean;
+  playlistId?: string;
+  onRemoveFromPlaylist?: (trackId: string) => void;
 }
 
 export function TrackRow({
@@ -33,10 +41,18 @@ export function TrackRow({
   contextQueue,
   showAlbum = true,
   showCover = true,
+  playlistId,
+  onRemoveFromPlaylist,
 }: TrackRowProps) {
-  const [isLiked, setIsLiked] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [playlistSubmenuOpen, setPlaylistSubmenuOpen] = useState(false);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
   const [licenseOpen, setLicenseOpen] = useState(false);
+
+  const { isLiked: checkLiked, toggleLike } = useLikedSongs();
+  const { playlists, addTrackToPlaylist, removeTrackFromPlaylist } =
+    usePlaylists();
+  const isLiked = checkLiked(track.id);
 
   const currentTrack = usePlayerStore((s) => s.queue[s.currentIndex]);
   const status = usePlayerStore((s) => s.status);
@@ -75,6 +91,11 @@ export function TrackRow({
     }
   };
 
+  const handleToggleLike = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    await toggleLike(track);
+  };
+
   return (
     <>
       <div
@@ -98,9 +119,9 @@ export function TrackRow({
             </div>
           ) : (
             <span
-              className={`group-hover:hidden ${
+              className={`tabular-nums group-hover:hidden ${
                 isCurrentTrack
-                  ? "text-[var(--color-accent)] font-semibold"
+                  ? "text-[var(--color-accent)] font-bold"
                   : "text-[var(--color-text-muted)]"
               }`}
             >
@@ -110,10 +131,8 @@ export function TrackRow({
 
           <button
             onClick={handlePlayClick}
-            className="hidden group-hover:flex items-center justify-center text-white transition hover:scale-110"
-            aria-label={
-              isPlaying ? `Pause ${track.title}` : `Play ${track.title}`
-            }
+            aria-label={isPlaying ? "Pause track" : "Play track"}
+            className="hidden group-hover:flex items-center justify-center text-white hover:scale-110 transition"
           >
             {isPlaying ? (
               <Pause className="h-4 w-4 fill-current text-white" />
@@ -123,49 +142,62 @@ export function TrackRow({
           </button>
         </div>
 
-        {/* Title + Artist (with optional cover) */}
-        <div className="flex min-w-0 items-center gap-3">
+        {/* Title + Artist + Cover */}
+        <div className="flex items-center gap-3 min-w-0 pr-2">
           {showCover && (
             <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded bg-[var(--color-bg-surface)]">
-              <Image
-                src={track.coverUrl || "/images/fallback-cover.svg"}
-                alt={track.title}
-                width={40}
-                height={40}
-                className="h-full w-full object-cover"
-                unoptimized
-              />
+              {track.coverUrl ? (
+                <Image
+                  src={track.coverUrl}
+                  alt={track.title}
+                  fill
+                  sizes="40px"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center bg-[var(--color-bg-hover)] text-xs text-[var(--color-text-muted)]">
+                  ♪
+                </div>
+              )}
             </div>
           )}
-          <div className="min-w-0 flex-1">
-            <div
-              className={`truncate font-medium leading-tight ${
+
+          <div className="flex flex-col min-w-0">
+            <span
+              className={`truncate font-medium ${
                 isCurrentTrack
                   ? "text-[var(--color-accent)] font-semibold"
-                  : "text-[var(--color-text-primary)] group-hover:text-white"
+                  : "text-[var(--color-text-primary)]"
               }`}
             >
               {track.title}
-            </div>
-            <div className="truncate text-xs text-[var(--color-text-secondary)] mt-0.5">
+            </span>
+            <div className="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] truncate">
               {track.artistId ? (
                 <Link
                   href={`/artist/${track.artistId}`}
                   onClick={(e) => e.stopPropagation()}
-                  className="hover:underline hover:text-white"
+                  className="hover:underline hover:text-white truncate"
                 >
                   {track.artistName}
                 </Link>
               ) : (
-                track.artistName
+                <span className="truncate">{track.artistName}</span>
+              )}
+
+              {/* Attribution badge */}
+              {track.provider === "jamendo" && (
+                <span className="shrink-0 rounded px-1 py-0.2 bg-[var(--color-bg-surface)] text-[9px] font-semibold text-[var(--color-text-muted)] border border-[var(--color-bg-hover)]">
+                  CC
+                </span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Album Column (Desktop) */}
+        {/* Album Name (Hidden on small mobile) */}
         {showAlbum && (
-          <div className="hidden md:block min-w-0 truncate text-xs text-[var(--color-text-secondary)]">
+          <div className="hidden md:block truncate text-xs text-[var(--color-text-muted)]">
             {track.albumId ? (
               <Link
                 href={`/album/${track.albumId}`}
@@ -184,16 +216,13 @@ export function TrackRow({
         <div className="flex items-center justify-end gap-3 text-xs">
           {/* Like Heart */}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsLiked(!isLiked);
-            }}
+            onClick={handleToggleLike}
             className={`transition ${
               isLiked
                 ? "text-[var(--color-accent)] opacity-100"
                 : "text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 hover:text-white"
             }`}
-            aria-label={isLiked ? "Unlike" : "Like"}
+            aria-label={isLiked ? "Unlike track" : "Like track"}
           >
             <Heart className={`h-4 w-4 ${isLiked ? "fill-current" : ""}`} />
           </button>
@@ -209,6 +238,7 @@ export function TrackRow({
               onClick={(e) => {
                 e.stopPropagation();
                 setMenuOpen(!menuOpen);
+                setPlaylistSubmenuOpen(false);
               }}
               className="rounded p-1 text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 hover:text-white"
               aria-label="More options"
@@ -223,11 +253,12 @@ export function TrackRow({
                   onClick={(e) => {
                     e.stopPropagation();
                     setMenuOpen(false);
+                    setPlaylistSubmenuOpen(false);
                   }}
                 />
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 top-full z-50 mt-1 w-48 rounded-md border border-[var(--color-bg-hover)] bg-[var(--color-bg-surface)] p-1.5 shadow-xl text-xs text-[var(--color-text-primary)]"
+                  className="absolute right-0 top-full z-50 mt-1 w-52 rounded-md border border-[var(--color-bg-hover)] bg-[var(--color-bg-surface)] p-1.5 shadow-xl text-xs text-[var(--color-text-primary)]"
                 >
                   <button
                     onClick={() => {
@@ -249,6 +280,72 @@ export function TrackRow({
                     <ListPlus className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
                     <span>Add to queue</span>
                   </button>
+
+                  {/* Add to playlist submenu */}
+                  <div className="relative">
+                    <button
+                      onClick={() =>
+                        setPlaylistSubmenuOpen(!playlistSubmenuOpen)
+                      }
+                      className="flex w-full items-center justify-between rounded px-2.5 py-1.5 hover:bg-[var(--color-bg-hover)]"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FolderPlus className="h-3.5 w-3.5 text-[var(--color-text-secondary)]" />
+                        <span>Add to playlist</span>
+                      </div>
+                      <span className="text-[10px] text-[var(--color-text-muted)]">
+                        ▶
+                      </span>
+                    </button>
+
+                    {playlistSubmenuOpen && (
+                      <div className="mt-1 rounded-md border border-[var(--color-bg-hover)] bg-[var(--color-bg-elevated)] p-1 max-h-48 overflow-y-auto shadow-2xl">
+                        <button
+                          onClick={() => {
+                            setCreateModalOpen(true);
+                            setMenuOpen(false);
+                            setPlaylistSubmenuOpen(false);
+                          }}
+                          className="flex w-full items-center gap-2 rounded px-2 py-1.5 hover:bg-[var(--color-bg-hover)] text-[var(--color-accent)] font-semibold"
+                        >
+                          <Plus className="h-3.5 w-3.5" />
+                          <span>New playlist</span>
+                        </button>
+                        {playlists.map((pl) => (
+                          <button
+                            key={pl.id}
+                            onClick={async () => {
+                              await addTrackToPlaylist(pl.id, track);
+                              setMenuOpen(false);
+                              setPlaylistSubmenuOpen(false);
+                            }}
+                            className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left hover:bg-[var(--color-bg-hover)] truncate text-[var(--color-text-secondary)] hover:text-white"
+                          >
+                            <span className="truncate">{pl.name}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Optional Remove from this playlist */}
+                  {(playlistId || onRemoveFromPlaylist) && (
+                    <button
+                      onClick={async () => {
+                        if (onRemoveFromPlaylist) {
+                          onRemoveFromPlaylist(track.id);
+                        } else if (playlistId) {
+                          await removeTrackFromPlaylist(playlistId, track.id);
+                        }
+                        setMenuOpen(false);
+                      }}
+                      className="flex w-full items-center gap-2 rounded px-2.5 py-1.5 hover:bg-red-500/20 text-red-400 hover:text-red-300"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      <span>Remove from this playlist</span>
+                    </button>
+                  )}
+
                   {track.albumId && (
                     <Link
                       href={`/album/${track.albumId}`}
@@ -291,6 +388,17 @@ export function TrackRow({
         track={track}
         isOpen={licenseOpen}
         onClose={() => setLicenseOpen(false)}
+      />
+
+      <PlaylistModal
+        isOpen={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        mode="create"
+        onSuccess={async (newPl) => {
+          if (newPl) {
+            await addTrackToPlaylist(newPl.id, track);
+          }
+        }}
       />
     </>
   );

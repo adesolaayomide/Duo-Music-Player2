@@ -41,22 +41,16 @@ test("search page searches catalog and shows results", async ({ page }) => {
 });
 
 test("catalog playback survives route navigation", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
   await page.goto("/");
 
   const playerBar = page.locator('footer[aria-label="Audio player"]');
   await expect(playerBar).toBeVisible();
   await expect(playerBar).toContainText("No track playing");
 
-  // Wait for quick access items to be populated
-  const quickAccessItem = page
-    .locator('section[aria-label="Quick access"] div[role="button"]')
-    .first();
-  await expect(quickAccessItem).toBeVisible({ timeout: 15000 });
-
-  // Hover to reveal floating play button and click it
-  await quickAccessItem.hover();
-  const playButton = quickAccessItem.locator('button[aria-label*="Play"]');
-  await expect(playButton).toBeVisible();
+  // Play an album or track card from the home page
+  const playButton = page.locator('button[aria-label^="Play "]').first();
+  await expect(playButton).toBeVisible({ timeout: 15000 });
   await playButton.click();
 
   // Verify PlayerBar loads track information
@@ -89,6 +83,7 @@ test("catalog playback survives route navigation", async ({ page }) => {
   // Navigate to Explore Genre via client-side link
   const genreLink = page.locator('a[href="/genre/electronic"]').first();
   await expect(genreLink).toBeVisible({ timeout: 10000 });
+  await genreLink.scrollIntoViewIfNeeded();
   await genreLink.click();
   await expect(page).toHaveURL(/\/genre\/electronic/);
   await expect(page.getByRole("heading", { name: "Electronic" })).toBeVisible();
@@ -96,4 +91,84 @@ test("catalog playback survives route navigation", async ({ page }) => {
   // Assert PlayerBar is STILL mounted and playing
   await expect(playerBar).toBeVisible();
   await expect(playerBar).not.toContainText("No track playing");
+});
+
+test("guest authentication signs in and updates TopBar profile", async ({
+  page,
+}) => {
+  await page.goto("/login", { waitUntil: "domcontentloaded" });
+  await expect(page.getByText("Welcome back")).toBeVisible({ timeout: 10000 });
+
+  // Click guest demo button
+  const guestBtn = page.getByRole("button", { name: /Continue as Guest/i });
+  await expect(guestBtn).toBeVisible();
+  await guestBtn.click();
+
+  // Should navigate back to home
+  await expect(page).toHaveURL("/");
+
+  // TopBar should now show user profile button instead of "Log in"
+  const userMenuBtn = page.locator('button[aria-label="User profile menu"]');
+  await expect(userMenuBtn).toBeVisible({ timeout: 10000 });
+});
+
+test("liking a track persists and appears on /liked page", async ({ page }) => {
+  await page.goto("/search?q=acoustic");
+
+  // Wait for track rows in search results
+  const trackRow = page
+    .locator('div[role="button"]')
+    .filter({ hasText: /acoustic/i })
+    .first();
+  await expect(trackRow).toBeVisible({ timeout: 15000 });
+
+  // Hover and click like button on TrackRow
+  await trackRow.hover();
+  const likeBtn = trackRow.locator('button[aria-label="Like track"]');
+  await expect(likeBtn).toBeVisible();
+  await likeBtn.click();
+
+  // Navigate to Liked Songs
+  await page.goto("/liked");
+  await expect(
+    page.getByRole("heading", { name: "Liked Songs" }),
+  ).toBeVisible();
+
+  // Should show 1 song on the liked page
+  await expect(
+    page.locator("main").getByText("1 song", { exact: true }),
+  ).toBeVisible({
+    timeout: 10000,
+  });
+});
+
+test("creating custom playlist adds to library and sidebar", async ({
+  page,
+}) => {
+  await page.goto("/library");
+  await expect(
+    page.getByRole("heading", { name: "Your Library" }),
+  ).toBeVisible();
+
+  // Click create playlist button
+  const createBtn = page
+    .getByRole("button", { name: /Create playlist/i })
+    .first();
+  await createBtn.click();
+
+  // Fill modal
+  const nameInput = page.getByPlaceholder(/Chill Beats/i);
+  await expect(nameInput).toBeVisible();
+  await nameInput.fill("My E2E Playlist");
+
+  const saveBtn = page.getByRole("button", { name: "Create", exact: true });
+  await saveBtn.click();
+
+  // Playlist should now appear in library grid and sidebar
+  await expect(
+    page.locator("#main-content").getByText("My E2E Playlist"),
+  ).toBeVisible({ timeout: 10000 });
+  await expect(page.locator("aside").getByText("My E2E Playlist")).toBeVisible({
+    timeout: 10000,
+  });
 });

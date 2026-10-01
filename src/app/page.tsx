@@ -11,12 +11,14 @@ import { Shelf } from "@/components/media/Shelf";
 import { TrackCard } from "@/components/media/TrackCard";
 import { SkeletonShelf } from "@/components/ui/Skeleton";
 import { useFeatured } from "@/hooks/useCatalog";
+import { useRecentlyPlayed } from "@/hooks/useRecentlyPlayed";
 import { GENRES } from "@/lib/utils/genres";
 import { usePlayerStore } from "@/store/playerStore";
 import type { Track } from "@/types";
 
 export default function HomePage() {
   const { data, isLoading, isError, refetch } = useFeatured();
+  const { recentlyPlayed } = useRecentlyPlayed();
 
   // Greeting based on time of day
   const greeting = useMemo(() => {
@@ -191,6 +193,20 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="flex flex-col gap-6">
+            {/* Shelf 0: Recently Played */}
+            {recentlyPlayed.length > 0 && (
+              <Shelf
+                title="Recently Played"
+                subtitle="Jump back into what you were listening to"
+              >
+                {recentlyPlayed.map((track) => (
+                  <div key={track.id} className="w-36 sm:w-44 shrink-0">
+                    <TrackCard track={track} contextQueue={recentlyPlayed} />
+                  </div>
+                ))}
+              </Shelf>
+            )}
+
             {/* Shelf 1: Featured & Trending Tracks */}
             {featuredTracks.length > 0 && (
               <Shelf

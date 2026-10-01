@@ -27,6 +27,7 @@ import { ProgressBar } from "@/components/player/ProgressBar";
 import { VolumeControl } from "@/components/player/VolumeControl";
 import { QueuePanel } from "@/components/player/QueuePanel";
 import { MiniPlayer } from "@/components/player/MiniPlayer";
+import { useLikedSongs } from "@/hooks/useLikedSongs";
 import { cn } from "@/lib/utils/cn";
 
 export function PlayerBar() {
@@ -43,7 +44,8 @@ export function PlayerBar() {
   const togglePlay = usePlayerStore((s) => s.togglePlay);
 
   const [isQueueOpen, setIsQueueOpen] = useState(false);
-  const [isLiked, setIsLiked] = useState(false);
+  const { isLiked: checkLiked, toggleLike } = useLikedSongs();
+  const isLiked = currentTrack ? checkLiked(currentTrack.id) : false;
 
   const isIdle = status === "idle" && !currentTrack;
   const isError = status === "error";
@@ -92,7 +94,9 @@ export function PlayerBar() {
 
               <button
                 type="button"
-                onClick={() => setIsLiked(!isLiked)}
+                onClick={() => {
+                  if (currentTrack) void toggleLike(currentTrack);
+                }}
                 aria-label={
                   isLiked
                     ? "Remove from your liked songs"

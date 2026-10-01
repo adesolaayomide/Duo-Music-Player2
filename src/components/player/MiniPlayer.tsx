@@ -9,11 +9,15 @@ import {
   selectDuration,
 } from "@/store/playerStore";
 import { PlayButton } from "./PlayButton";
+import { useLikedSongs } from "@/hooks/useLikedSongs";
 
 export function MiniPlayer() {
   const currentTrack = usePlayerStore(selectCurrentTrack);
   const currentTime = usePlayerStore(selectCurrentTime);
   const duration = usePlayerStore(selectDuration);
+
+  const { isLiked: checkLiked, toggleLike } = useLikedSongs();
+  const isLiked = currentTrack ? checkLiked(currentTrack.id) : false;
 
   if (!currentTrack) return null;
 
@@ -66,10 +70,15 @@ export function MiniPlayer() {
         <div className="flex items-center gap-2 flex-shrink-0">
           <button
             type="button"
-            aria-label="Like track"
-            className="text-text-secondary hover:text-accent p-1 transition-colors"
+            onClick={() => {
+              if (currentTrack) void toggleLike(currentTrack);
+            }}
+            aria-label={isLiked ? "Unlike track" : "Like track"}
+            className={`p-1 transition-colors ${
+              isLiked ? "text-accent" : "text-text-secondary hover:text-white"
+            }`}
           >
-            <Heart size={18} />
+            <Heart size={18} fill={isLiked ? "currentColor" : "none"} />
           </button>
 
           <PlayButton size="sm" />

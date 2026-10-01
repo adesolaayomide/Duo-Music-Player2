@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Loader2, Play } from 'lucide-react';
-import { jamendoProvider } from '@/lib/providers/jamendo';
-import { usePlayerStore } from '@/store/playerStore';
-import type { Playlist } from '@/types';
+import React, { useState } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Loader2, Play } from "lucide-react";
+import { jamendoProvider } from "@/lib/providers/jamendo";
+import { usePlayerStore } from "@/store/playerStore";
+import type { Playlist } from "@/types";
 
 interface PlaylistCardProps {
   playlist: Playlist;
@@ -48,7 +48,7 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
     >
       <div className="relative mb-3 aspect-square w-full overflow-hidden rounded shadow-lg bg-[var(--color-bg-surface)]">
         <Image
-          src={playlist.coverUrl || '/images/fallback-cover.svg'}
+          src={playlist.coverUrl || "/images/fallback-cover.svg"}
           alt={playlist.name}
           fill
           sizes="(max-width: 768px) 160px, 200px"
@@ -61,8 +61,8 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
           disabled={loading}
           className={`absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent)] text-black shadow-xl transition-all duration-200 hover:scale-105 ${
             loading
-              ? 'opacity-100 translate-y-0'
-              : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
+              ? "opacity-100 translate-y-0"
+              : "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0"
           }`}
           aria-label={`Play ${playlist.name}`}
         >
@@ -79,7 +79,8 @@ export function PlaylistCard({ playlist }: PlaylistCardProps) {
           {playlist.name}
         </div>
         <div className="truncate text-xs text-[var(--color-text-secondary)] mt-1">
-          {playlist.description || `By ${playlist.ownerName || 'Jamendo Community'}`}
+          {playlist.description ||
+            `By ${playlist.ownerName || "Jamendo Community"}`}
         </div>
       </div>
     </Link>
