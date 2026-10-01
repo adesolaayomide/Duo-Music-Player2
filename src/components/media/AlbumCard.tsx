@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Loader2, Pause, Play } from "lucide-react";
-import { jamendoProvider } from "@/lib/providers/jamendo";
-import { usePlayerStore } from "@/store/playerStore";
-import type { Album } from "@/types";
+import React, { useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { Loader2, Pause, Play } from 'lucide-react';
+import { jamendoProvider } from '@/lib/providers/jamendo';
+import { usePlayerStore } from '@/store/playerStore';
+import type { Album } from '@/types';
 
 interface AlbumCardProps {
   album: Album;
@@ -23,7 +23,7 @@ export function AlbumCard({ album }: AlbumCardProps) {
   const togglePlay = usePlayerStore((s) => s.togglePlay);
 
   const isCurrentAlbum = currentTrack?.albumId === album.id;
-  const isPlaying = isCurrentAlbum && status === "playing";
+  const isPlaying = isCurrentAlbum && status === 'playing';
 
   const handlePlayClick = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -45,7 +45,7 @@ export function AlbumCard({ album }: AlbumCardProps) {
       if (fullAlbum.tracks && fullAlbum.tracks.length > 0) {
         playQueue(fullAlbum.tracks, 0);
       }
-    } catch (err) {
+    } catch {
       // Fallback navigation if instant play fails
       router.push(`/album/${album.id}`);
     } finally {
@@ -60,7 +60,7 @@ export function AlbumCard({ album }: AlbumCardProps) {
     >
       <div className="relative mb-3 aspect-square w-full overflow-hidden rounded shadow-lg bg-[var(--color-bg-surface)]">
         <Image
-          src={album.coverUrl || "/images/fallback-cover.svg"}
+          src={album.coverUrl || '/images/fallback-cover.svg'}
           alt={album.title}
           fill
           sizes="(max-width: 768px) 160px, 200px"
@@ -73,12 +73,10 @@ export function AlbumCard({ album }: AlbumCardProps) {
           disabled={loading}
           className={`absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--color-accent)] text-black shadow-xl transition-all duration-200 hover:scale-105 ${
             isPlaying || isCurrentAlbum || loading
-              ? "opacity-100 translate-y-0"
-              : "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0"
+              ? 'opacity-100 translate-y-0'
+              : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
           }`}
-          aria-label={
-            isPlaying ? `Pause ${album.title}` : `Play ${album.title}`
-          }
+          aria-label={isPlaying ? `Pause ${album.title}` : `Play ${album.title}`}
         >
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin text-black" />
@@ -95,7 +93,7 @@ export function AlbumCard({ album }: AlbumCardProps) {
           {album.title}
         </div>
         <div className="truncate text-xs text-[var(--color-text-secondary)] mt-1">
-          {album.year ? `${album.year} • ` : "Album • "}
+          {album.year ? `${album.year} • ` : 'Album • '}
           {album.artistName}
         </div>
       </div>
