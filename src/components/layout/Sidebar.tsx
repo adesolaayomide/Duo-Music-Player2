@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  FolderDown,
   Home,
   Search,
   Library,
@@ -115,6 +116,16 @@ export function Sidebar() {
 
             {!sidebarCollapsed && (
               <div className="flex items-center gap-1">
+                <Link href="/library/imports" title="Import playlists">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label="Import playlists"
+                    className="h-8 w-8 hover:text-white"
+                  >
+                    <FolderDown size={16} />
+                  </Button>
+                </Link>
                 <Button
                   variant="ghost"
                   size="icon"

@@ -137,6 +137,102 @@ export interface Database {
         };
         Relationships: [];
       };
+      connected_accounts: {
+        Row: {
+          id: string;
+          user_id: string;
+          provider: string;
+          external_account_id: string;
+          status: "connected" | "revoked" | "error";
+          connected_at: string;
+          revoked_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          provider: string;
+          external_account_id: string;
+          status?: "connected" | "revoked" | "error";
+          connected_at?: string;
+          revoked_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          provider?: string;
+          external_account_id?: string;
+          status?: "connected" | "revoked" | "error";
+          connected_at?: string;
+          revoked_at?: string | null;
+        };
+        Relationships: [];
+      };
+      import_transfers: {
+        Row: {
+          id: string;
+          user_id: string;
+          connected_account_id: string | null;
+          provider_transfer_id: string | null;
+          status: "pending" | "in_progress" | "completed" | "failed" | "cancelled";
+          source_playlist_name: string;
+          total_items: number;
+          imported_items: number;
+          failed_items: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          connected_account_id?: string | null;
+          provider_transfer_id?: string | null;
+          status?: "pending" | "in_progress" | "completed" | "failed" | "cancelled";
+          source_playlist_name: string;
+          total_items?: number;
+          imported_items?: number;
+          failed_items?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          connected_account_id?: string | null;
+          provider_transfer_id?: string | null;
+          status?: "pending" | "in_progress" | "completed" | "failed" | "cancelled";
+          source_playlist_name?: string;
+          total_items?: number;
+          imported_items?: number;
+          failed_items?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      import_transfer_events: {
+        Row: {
+          id: string;
+          transfer_id: string;
+          event_type: string;
+          payload: Json;
+          received_at: string;
+        };
+        Insert: {
+          id?: string;
+          transfer_id: string;
+          event_type: string;
+          payload: Json;
+          received_at?: string;
+        };
+        Update: {
+          id?: string;
+          transfer_id?: string;
+          event_type?: string;
+          payload?: Json;
+          received_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
@@ -144,3 +240,4 @@ export interface Database {
     CompositeTypes: Record<string, never>;
   };
 }
+

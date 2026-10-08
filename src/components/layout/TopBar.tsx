@@ -7,9 +7,11 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  FolderDown,
   Heart,
   Library,
   LogOut,
+  Settings,
   User as UserIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -74,7 +76,7 @@ export function TopBar({ accentColor, children }: TopBarProps) {
         {children && <div className="flex-1 max-w-md min-w-0">{children}</div>}
       </div>
 
-      {/* ── Right: User Menu ─────────────────────────────── */}
+      {/* ── Right: User Menu & Auth Actions ───────────────── */}
       <div className="relative flex items-center gap-3 shrink-0">
         {isAuthenticated ? (
           <>
@@ -108,7 +110,7 @@ export function TopBar({ accentColor, children }: TopBarProps) {
                   className="fixed inset-0 z-40"
                   onClick={() => setDropdownOpen(false)}
                 />
-                <div className="absolute right-0 top-full z-50 mt-2 w-52 rounded-xl border border-[var(--color-bg-hover)] bg-[var(--color-bg-elevated)] p-1.5 shadow-2xl animate-in fade-in duration-150 text-xs">
+                <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-[var(--color-bg-hover)] bg-[var(--color-bg-elevated)] p-1.5 shadow-2xl animate-in fade-in duration-150 text-xs">
                   <div className="px-3 py-2 border-b border-[var(--color-bg-hover)] mb-1">
                     <p className="font-bold text-white truncate">
                       {user.username}
@@ -138,6 +140,24 @@ export function TopBar({ accentColor, children }: TopBarProps) {
                     <span>Liked Songs</span>
                   </Link>
 
+                  <Link
+                    href="/library/imports"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-white transition"
+                  >
+                    <FolderDown size={16} />
+                    <span>Import Playlists</span>
+                  </Link>
+
+                  <Link
+                    href="/settings/connections"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-white transition"
+                  >
+                    <Settings size={16} />
+                    <span>Connected Accounts</span>
+                  </Link>
+
                   <div className="my-1 border-t border-[var(--color-bg-hover)]" />
 
                   <button
@@ -152,13 +172,22 @@ export function TopBar({ accentColor, children }: TopBarProps) {
             )}
           </>
         ) : (
-          <Link
-            href="/login"
-            className="flex items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-bold text-black hover:scale-105 hover:bg-white/90 transition shadow-md"
-          >
-            <UserIcon size={14} />
-            <span>Log in</span>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/library/imports"
+              className="hidden sm:flex items-center gap-1.5 rounded-full border border-white/20 bg-black/40 px-3.5 py-1.5 text-xs font-semibold text-[var(--color-text-secondary)] hover:text-white hover:border-white/40 transition"
+            >
+              <FolderDown size={14} />
+              <span>Import</span>
+            </Link>
+            <Link
+              href="/login"
+              className="flex items-center gap-2 rounded-full bg-white px-5 py-2 text-xs font-bold text-black hover:scale-105 hover:bg-white/90 transition shadow-md"
+            >
+              <UserIcon size={14} />
+              <span>Log in</span>
+            </Link>
+          </div>
         )}
       </div>
     </header>

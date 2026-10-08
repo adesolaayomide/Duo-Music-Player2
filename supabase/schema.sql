@@ -179,3 +179,105 @@ create policy "Users can update recently played timestamps"
   using (auth.uid() = user_id);
 
 create index if not exists idx_recently_played_user on public.recently_played(user_id, played_at desc);
+
+-- 6. Connected Accounts Table (Phase 7 Playlist Import)
+create table if not exists public.connected_accounts (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  provider text not null,
+  external_account_id text not null,
+  status text check (status in ('connected', 'revoked', 'error')) default 'connected' not null,
+  connected_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  revoked_at timestamp with time zone,
+  unique(user_id, provider, external_account_id)
+);
+
+alter table public.connected_accounts enable row level security;
+
+create policy "Users can view own connected accounts"
+  on public.connected_accounts for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own connected accounts"
+  on public.connected_accounts for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own connected accounts"
+  on public.connected_accounts for update
+  using (auth.uid() = user_id);
+
+create policy "Users can delete own connected accounts"
+  on public.connected_accounts for delete
+  using (auth.uid() = user_id);
+
+create index if not exists idx_connected_accounts_user on public.connected_accounts(user_id, status);
+
+-- 7. Import Transfers Table (Phase 7 Playlist Import)
+create table if not exists public.import_transfers (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid references auth.users on delete cascade not null,
+  connected_account_id uuid references public.connected_accounts on delete set null,
+  provider_transfer_id text,
+  status text check (status in ('pending', 'in_progress', 'completed', 'failed', 'cancelled')) default 'pending' not null,
+  source_playlist_name text not null,
+  total_items integer default 0 not null,
+  imported_items integer default 0 not null,
+  failed_items integer default 0 not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  updated_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.import_transfers enable row level security;
+
+create policy "Users can view own import transfers"
+  on public.import_transfers for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert own import transfers"
+  on public.import_transfers for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own import transfers"
+  on public.import_transfers for update
+  using (auth.uid() = user_id);
+
+create policy "Users can delete own import transfers"
+  on public.import_transfers for delete
+  using (auth.uid() = user_id);
+
+create index if not exists idx_import_transfers_user on public.import_transfers(user_id, created_at desc);
+create index if not exists idx_import_transfers_provider_id on public.import_transfers(provider_transfer_id);
+
+-- 8. Import Transfer Events Table (Phase 7 Playlist Import Audit Log)
+create table if not exists public.import_transfer_events (
+  id uuid default gen_random_uuid() primary key,
+  transfer_id uuid references public.import_transfers on delete cascade not null,
+  event_type text not null,
+  payload jsonb not null,
+  received_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+alter table public.import_transfer_events enable row level security;
+
+create policy "Users can view own transfer events"
+  on public.import_transfer_events for select
+  using (
+    exists (
+      select 1 from public.import_transfers
+      where id = import_transfer_events.transfer_id
+        and user_id = auth.uid()
+    )
+  );
+
+create policy "Users can insert own transfer events"
+  on public.import_transfer_events for insert
+  with check (
+    exists (
+      select 1 from public.import_transfers
+      where id = import_transfer_events.transfer_id
+        and user_id = auth.uid()
+    )
+  );
+
+create index if not exists idx_import_transfer_events_transfer on public.import_transfer_events(transfer_id, received_at asc);
+

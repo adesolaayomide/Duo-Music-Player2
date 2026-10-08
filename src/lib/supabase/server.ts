@@ -1,4 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { isSupabaseConfigured } from "./client";
 import type { Database } from "./types";
@@ -30,4 +31,24 @@ export async function getSupabaseServerClient() {
       },
     },
   );
+}
+
+/**
+ * Service role admin client that bypasses RLS.
+ * Used exclusively server-side for webhook processing and background workers.
+ */
+export function getSupabaseAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!isSupabaseConfigured() || !url || !serviceKey) {
+    return null;
+  }
+
+  return createClient<Database>(url, serviceKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
 }

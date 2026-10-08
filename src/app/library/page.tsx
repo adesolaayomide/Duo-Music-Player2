@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, Music, Play, Plus, Search } from "lucide-react";
+import { FolderDown, Heart, Music, Play, Plus, Search } from "lucide-react";
 import { TopBar } from "@/components/layout/TopBar";
 import { Button } from "@/components/ui/Button";
 import { PlaylistModal } from "@/components/media/PlaylistModal";
@@ -51,15 +51,27 @@ export default function LibraryPage() {
           <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
             Your Library
           </h1>
-          <Button
-            onClick={() => setCreateModalOpen(true)}
-            variant="secondary"
-            size="sm"
-            className="flex items-center gap-1.5 rounded-full px-4 text-xs font-bold"
-          >
-            <Plus size={16} />
-            <span>Create playlist</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Link href="/library/imports">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-1.5 rounded-full px-4 text-xs font-bold text-[var(--color-text-secondary)] hover:text-white border border-[var(--color-bg-hover)]"
+              >
+                <FolderDown size={15} />
+                <span>Import playlists</span>
+              </Button>
+            </Link>
+            <Button
+              onClick={() => setCreateModalOpen(true)}
+              variant="secondary"
+              size="sm"
+              className="flex items-center gap-1.5 rounded-full px-4 text-xs font-bold"
+            >
+              <Plus size={16} />
+              <span>Create playlist</span>
+            </Button>
+          </div>
         </div>
 
         {/* ── Filter Pills ───────────────────────────── */}
