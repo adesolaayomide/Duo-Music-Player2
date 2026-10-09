@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import {
   CheckCircle,
   AlertCircle,
-  ExternalLink,
   Trash2,
   ArrowRight,
   ShieldCheck,
@@ -71,7 +70,6 @@ function ConnectionsContent() {
   const canceledParam = searchParams.get("canceled");
 
   const {
-    accounts,
     activeAccounts,
     loading,
     error,
@@ -81,7 +79,9 @@ function ConnectionsContent() {
     refreshAccounts,
   } = useConnectedAccounts();
 
-  const [connectingService, setConnectingService] = useState<string | null>(null);
+  const [connectingService, setConnectingService] = useState<string | null>(
+    null,
+  );
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -131,7 +131,8 @@ function ConnectionsContent() {
               Connected Music Services
             </h1>
             <p className="text-sm text-[var(--color-text-secondary)] mt-1">
-              Connect external streaming accounts to import your playlists into Duo Player.
+              Connect external streaming accounts to import your playlists into
+              Duo Player.
             </p>
           </div>
 
@@ -143,7 +144,10 @@ function ConnectionsContent() {
               disabled={loading}
               className="text-xs text-[var(--color-text-secondary)] hover:text-white"
             >
-              <RefreshCw size={14} className={loading ? "animate-spin mr-1.5" : "mr-1.5"} />
+              <RefreshCw
+                size={14}
+                className={loading ? "animate-spin mr-1.5" : "mr-1.5"}
+              />
               Refresh
             </Button>
             <Link href="/library/imports">
@@ -163,7 +167,10 @@ function ConnectionsContent() {
         {successParam && (
           <div className="mb-6 flex items-center gap-3 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-4 text-emerald-400 text-sm">
             <CheckCircle size={18} className="shrink-0" />
-            <span>Account connected successfully! You can now import playlists below.</span>
+            <span>
+              Account connected successfully! You can now import playlists
+              below.
+            </span>
           </div>
         )}
 
@@ -187,9 +194,12 @@ function ConnectionsContent() {
             <div className="flex items-center gap-2.5">
               <ShieldCheck size={20} className="text-[var(--color-accent)]" />
               <div>
-                <h2 className="text-sm font-bold text-white">Sandbox Account Capacity</h2>
+                <h2 className="text-sm font-bold text-white">
+                  Sandbox Account Capacity
+                </h2>
                 <p className="text-xs text-[var(--color-text-secondary)]">
-                  The provider sandbox supports up to 5 concurrent connected streaming accounts.
+                  The provider sandbox supports up to 5 concurrent connected
+                  streaming accounts.
                 </p>
               </div>
             </div>
@@ -206,13 +216,16 @@ function ConnectionsContent() {
               className={`h-full transition-all duration-300 ${
                 isLimitReached ? "bg-amber-400" : "bg-[var(--color-accent)]"
               }`}
-              style={{ width: `${Math.min(100, (activeAccounts.length / 5) * 100)}%` }}
+              style={{
+                width: `${Math.min(100, (activeAccounts.length / 5) * 100)}%`,
+              }}
             />
           </div>
 
           {isLimitReached && (
             <p className="text-xs text-amber-300 mt-2 font-medium">
-              You have reached the maximum 5 connected accounts for the sandbox. Disconnect an account to connect a new one.
+              You have reached the maximum 5 connected accounts for the sandbox.
+              Disconnect an account to connect a new one.
             </p>
           )}
         </div>
@@ -228,10 +241,16 @@ function ConnectionsContent() {
 
           {activeAccounts.length === 0 ? (
             <div className="rounded-xl border border-dashed border-[var(--color-bg-hover)] bg-[var(--color-bg-elevated)]/50 p-8 text-center">
-              <Music2 size={36} className="mx-auto text-[var(--color-text-muted)] mb-3 opacity-60" />
-              <h3 className="text-sm font-semibold text-white mb-1">No services connected yet</h3>
+              <Music2
+                size={36}
+                className="mx-auto text-[var(--color-text-muted)] mb-3 opacity-60"
+              />
+              <h3 className="text-sm font-semibold text-white mb-1">
+                No services connected yet
+              </h3>
               <p className="text-xs text-[var(--color-text-secondary)] max-w-sm mx-auto mb-4">
-                Connect Spotify, Apple Music, or another service below to import your playlists directly.
+                Connect Spotify, Apple Music, or another service below to import
+                your playlists directly.
               </p>
             </div>
           ) : (
@@ -239,7 +258,7 @@ function ConnectionsContent() {
               {activeAccounts.map((account) => {
                 const isDisconnecting = disconnectingId === account.id;
                 const serviceConfig = SUPPORTED_SERVICES.find(
-                  (s) => s.id.toLowerCase() === account.provider.toLowerCase()
+                  (s) => s.id.toLowerCase() === account.provider.toLowerCase(),
                 );
 
                 return (
@@ -305,11 +324,13 @@ function ConnectionsContent() {
 
         {/* Available Services to Connect */}
         <div>
-          <h2 className="text-base font-bold text-white mb-4">Available Streaming Services</h2>
+          <h2 className="text-base font-bold text-white mb-4">
+            Available Streaming Services
+          </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {SUPPORTED_SERVICES.map((service) => {
               const isAlreadyConnected = activeAccounts.some(
-                (a) => a.provider.toLowerCase() === service.id.toLowerCase()
+                (a) => a.provider.toLowerCase() === service.id.toLowerCase(),
               );
               const isConnecting = connectingService === service.id;
 
@@ -343,7 +364,9 @@ function ConnectionsContent() {
                   <Button
                     variant={isAlreadyConnected ? "secondary" : "primary"}
                     size="sm"
-                    disabled={isLimitReached || isConnecting || isAlreadyConnected}
+                    disabled={
+                      isLimitReached || isConnecting || isAlreadyConnected
+                    }
                     onClick={() => handleConnect(service.id)}
                     className={`w-full rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
                       isAlreadyConnected

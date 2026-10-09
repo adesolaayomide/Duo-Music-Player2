@@ -3,8 +3,14 @@ import { z } from "zod";
 import crypto from "crypto";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { musicTransferClient } from "@/lib/providers/musicTransfer/client";
-import { enforceTransferRateLimit, jsonTransferError } from "@/lib/server/transferApi";
-import { normalizeTrack, type RawJamendoTrack } from "@/lib/providers/jamendo.normalize";
+import {
+  enforceTransferRateLimit,
+  jsonTransferError,
+} from "@/lib/server/transferApi";
+import {
+  normalizeTrack,
+  type RawJamendoTrack,
+} from "@/lib/providers/jamendo.normalize";
 import type { ExternalTrack } from "@/lib/providers/musicTransfer/types";
 import type { Track } from "@/types";
 
@@ -17,7 +23,7 @@ const startTransferSchema = z.object({
         id: z.string().min(1, "Playlist ID is required"),
         name: z.string().min(1, "Playlist name is required"),
         trackCount: z.number().optional().default(0),
-      })
+      }),
     )
     .min(1, "At least one playlist must be selected"),
 });
@@ -36,7 +42,12 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate-limit by user ID or IP: 10 transfer-starts per minute
-  const rateLimitError = enforceTransferRateLimit(request, userId || undefined, 10, 60 * 1000);
+  const rateLimitError = enforceTransferRateLimit(
+    request,
+    userId || undefined,
+    10,
+    60 * 1000,
+  );
   if (rateLimitError) return rateLimitError;
 
   let body: unknown;
@@ -51,7 +62,7 @@ export async function POST(request: NextRequest) {
     return jsonTransferError(
       "BAD_REQUEST",
       parsed.error.issues[0]?.message || "Invalid transfer request",
-      400
+      400,
     );
   }
 
@@ -76,7 +87,7 @@ export async function POST(request: NextRequest) {
     id: string;
     user_id: string;
     connected_account_id: string | null;
-    provider_transfer_id: string;
+    provider_transfer_id: string | null;
     status: "pending" | "in_progress" | "completed" | "failed" | "cancelled";
     source_playlist_name: string;
     total_items: number;
@@ -157,14 +168,20 @@ interface BackgroundTransferParams {
 }
 
 async function processTransferInBackground(params: BackgroundTransferParams) {
-  const { transferId, externalUserUuid, sourcePlaylistId, sourcePlaylistName, userId } = params;
+  const {
+    transferId,
+    externalUserUuid,
+    sourcePlaylistId,
+    sourcePlaylistName,
+    userId,
+  } = params;
   const supabase = await getSupabaseServerClient();
 
   const updateStatus = async (
     status: "in_progress" | "completed" | "failed",
     total: number,
     imported: number,
-    failed: number
+    failed: number,
   ) => {
     if (supabase && userId) {
       await supabase
@@ -188,10 +205,13 @@ async function processTransferInBackground(params: BackgroundTransferParams) {
       try {
         externalTracks = await musicTransferClient.listPlaylistTracks(
           externalUserUuid,
-          sourcePlaylistId
+          sourcePlaylistId,
         );
       } catch (e) {
-        console.warn("Could not fetch remote tracks, using mock/sample fallback for demo:", e);
+        console.warn(
+          "Could not fetch remote tracks, using mock/sample fallback for demo:",
+          e,
+        );
       }
     }
 
@@ -199,20 +219,28 @@ async function processTransferInBackground(params: BackgroundTransferParams) {
     let matchedCount = 0;
     let unmatchedCount = 0;
     const matchedTracks: Track[] = [];
-    const unmatchedItems: Array<{ name: string; artist: string; reason: string }> = [];
+    const unmatchedItems: Array<{
+      name: string;
+      artist: string;
+      reason: string;
+    }> = [];
 
     const jamendoClientId = process.env.JAMENDO_CLIENT_ID || "5e8f6ba4";
 
     for (const track of externalTracks) {
       try {
-        const query = encodeURIComponent(`${track.name} ${track.artist}`.trim());
+        const query = encodeURIComponent(
+          `${track.name} ${track.artist}`.trim(),
+        );
         const searchRes = await fetch(
           `https://api.jamendo.com/v3.0/tracks/?client_id=${jamendoClientId}&format=json&limit=1&namesearch=${query}`,
-          { cache: "force-cache" }
+          { cache: "force-cache" },
         );
 
         if (searchRes.ok) {
-          const searchData = (await searchRes.json()) as { results?: RawJamendoTrack[] };
+          const searchData = (await searchRes.json()) as {
+            results?: RawJamendoTrack[];
+          };
           const result = searchData.results?.[0];
           if (result) {
             matchedTracks.push(normalizeTrack(result));

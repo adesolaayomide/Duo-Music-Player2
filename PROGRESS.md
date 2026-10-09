@@ -50,10 +50,24 @@ Phase 1 — Foundation ✅ COMPLETE
 
 ## Next Steps
 
-Phase 2 — Player Core:
+- [x] Phase 1 — Foundation: tokens, AppShell, layouts, playerStore, skeleton loaders ✅
+- [x] Phase 2 — Player Core: AudioEngine, keyboard shortcuts, Media Session API, preloading ✅
+- [x] Phase 3 — Catalog: Jamendo API provider, shelves, search, album/artist/playlist pages ✅
+- [x] Phase 4 — Accounts & Cloud Persistence: Supabase Auth, Liked Songs, Playlists, Recently Played ✅
+- [x] Phase 5 — Polish: Fullscreen Now Playing, Queue drawer, Toast system, Local File Upload ✅
+- [x] Phase 6 — Quality & Production: A11y, WCAG AA, Lighthouse optimizations, Vitest tests, CI ✅
+- [x] Phase 7 — External Playlist Import: Connected accounts (Spotify, Apple Music, YouTube Music via MusicAPI), async transfer pipeline, webhook verification & idempotency, match reports, Jamendo CC-licensed song mapping ✅
+- [x] Railway Deployment Hotfix: Restored `login/page.tsx`, implemented default-exported `ImportsPage` in `library/imports/page.tsx`, aligned `provider_transfer_id` type in `start/route.ts` ✅
 
-- Wire `AudioProvider` fully (currently has wiring code, needs testing with real track)
-- Add keyboard shortcuts (Space = play/pause, ← → = prev/next, M = mute)
-- Implement Media Session API (`mediaSession.ts`)
-- Preload next track in queue
-- Animate PlayerBar progress smoothly with requestAnimationFrame
+## Open Decisions
+
+- PWA offline: cache-first for shell, network-first for API (manifest + meta tags in place)
+- Music Transfer catalog matching: currently resolves tracks via Jamendo search with Creative Commons licensing, generates unmatched reports for items not found in CC catalog.
+
+## Known Issues
+
+- None
+
+## Next Steps
+
+- Push commit to GitHub repository (`origin main`) to trigger Railway production redeploy.
