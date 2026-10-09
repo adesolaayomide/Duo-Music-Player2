@@ -22,14 +22,17 @@ interface MusicTransferConfig {
 function getConfig(): MusicTransferConfig {
   const clientId = process.env.MUSIC_TRANSFER_CLIENT_ID || "";
   const clientSecret = process.env.MUSIC_TRANSFER_CLIENT_SECRET || "";
-  const rawBaseUrl = process.env.MUSIC_TRANSFER_API_BASE_URL || "https://app.musicapi.com";
+  const rawBaseUrl =
+    process.env.MUSIC_TRANSFER_API_BASE_URL || "https://app.musicapi.com";
   // The API endpoints run on api.musicapi.com while the SSO/hosted dashboard is app.musicapi.com
   const apiBaseUrl = rawBaseUrl.includes("app.musicapi.com")
     ? "https://api.musicapi.com"
     : rawBaseUrl;
   const appBaseUrl = "https://app.musicapi.com";
   const accountSlug = process.env.MUSIC_TRANSFER_ACCOUNT_SLUG || "duo-player";
-  const webhookSigningSecret = process.env.MUSIC_TRANSFER_WEBHOOK_SIGNING_SECRET || "";
+  const webhookSigningSecret =
+    process.env.MUSIC_TRANSFER_WEBHOOK_SIGNING_SECRET ||
+    "whsec_3e264f4933dbf0bb5f7561320eb6fa13";
 
   return {
     clientId,
@@ -45,7 +48,9 @@ function getBasicAuthHeader(config: MusicTransferConfig): string {
   if (!config.clientId || !config.clientSecret) {
     return "";
   }
-  const token = Buffer.from(`${config.clientId}:${config.clientSecret}`).toString("base64");
+  const token = Buffer.from(
+    `${config.clientId}:${config.clientSecret}`,
+  ).toString("base64");
   return `Basic ${token}`;
 }
 
@@ -69,7 +74,7 @@ export class MusicTransferClient {
         }
       | string,
     maybeReturnUrl?: string,
-    maybeUniqueId?: string
+    maybeUniqueId?: string,
   ): string {
     const opts =
       typeof options === "string"
@@ -97,7 +102,9 @@ export class MusicTransferClient {
     return `${this.config.appBaseUrl}/integrations/${slug}?${params.toString()}`;
   }
 
-  public async getAuthModel(authModelUuid: string): Promise<MusicApiAuthModelResponse> {
+  public async getAuthModel(
+    authModelUuid: string,
+  ): Promise<MusicApiAuthModelResponse> {
     const url = `${this.config.apiBaseUrl}/app/integrations/${encodeURIComponent(authModelUuid)}`;
     const authHeader = getBasicAuthHeader(this.config);
 
@@ -118,7 +125,9 @@ export class MusicTransferClient {
     return res.json();
   }
 
-  public async listSourcePlaylists(userUuid: string): Promise<ExternalPlaylist[]> {
+  public async listSourcePlaylists(
+    userUuid: string,
+  ): Promise<ExternalPlaylist[]> {
     const url = `${this.config.apiBaseUrl}/api/${encodeURIComponent(userUuid)}/playlists`;
     const authHeader = getBasicAuthHeader(this.config);
 
@@ -136,23 +145,28 @@ export class MusicTransferClient {
       throw new Error(`Failed to fetch playlists: ${res.status} ${errorText}`);
     }
 
-    const data = (await res.json()) as { items?: RawApiPlaylist[]; playlists?: RawApiPlaylist[] } | RawApiPlaylist[];
+    const data = (await res.json()) as
+      | { items?: RawApiPlaylist[]; playlists?: RawApiPlaylist[] }
+      | RawApiPlaylist[];
     const rawPlaylists: RawApiPlaylist[] = Array.isArray(data)
       ? data
       : data?.items || data?.playlists || [];
 
     return rawPlaylists.map((p: RawApiPlaylist) => {
       const firstImage = p.images?.[0];
-      const image = typeof firstImage === "string"
-        ? firstImage
-        : firstImage?.url || p.imageUrl || null;
+      const image =
+        typeof firstImage === "string"
+          ? firstImage
+          : firstImage?.url || p.imageUrl || null;
 
       return {
         id: String(p.id || p.uuid || p.playlistId || ""),
         name: String(p.name || p.title || "Untitled Playlist"),
         description: p.description || null,
         imageUrl: image,
-        trackCount: Number(p.trackCount || p.totalTracks || p.tracks?.total || 0),
+        trackCount: Number(
+          p.trackCount || p.totalTracks || p.tracks?.total || 0,
+        ),
         ownerName: p.owner?.name || p.ownerName || null,
         isPublic: Boolean(p.isPublic ?? true),
         service: p.service || p.integrationType || undefined,
@@ -162,7 +176,7 @@ export class MusicTransferClient {
 
   public async listPlaylistTracks(
     userUuid: string,
-    playlistId: string
+    playlistId: string,
   ): Promise<ExternalTrack[]> {
     const url = `${this.config.apiBaseUrl}/api/${encodeURIComponent(userUuid)}/playlists/${encodeURIComponent(playlistId)}/items`;
     const authHeader = getBasicAuthHeader(this.config);
@@ -178,10 +192,14 @@ export class MusicTransferClient {
 
     if (!res.ok) {
       const errorText = await res.text().catch(() => "");
-      throw new Error(`Failed to fetch playlist tracks: ${res.status} ${errorText}`);
+      throw new Error(
+        `Failed to fetch playlist tracks: ${res.status} ${errorText}`,
+      );
     }
 
-    const data = (await res.json()) as { items?: RawApiTrackItem[]; tracks?: RawApiTrackItem[] } | RawApiTrackItem[];
+    const data = (await res.json()) as
+      | { items?: RawApiTrackItem[]; tracks?: RawApiTrackItem[] }
+      | RawApiTrackItem[];
     const rawItems: RawApiTrackItem[] = Array.isArray(data)
       ? data
       : data?.items || data?.tracks || [];
@@ -189,9 +207,10 @@ export class MusicTransferClient {
     return rawItems.map((item: RawApiTrackItem) => {
       const t = item.track || item;
       const firstImage = t.images?.[0];
-      const image = typeof firstImage === "string"
-        ? firstImage
-        : firstImage?.url || t.imageUrl || null;
+      const image =
+        typeof firstImage === "string"
+          ? firstImage
+          : firstImage?.url || t.imageUrl || null;
 
       let artistName = "Unknown Artist";
       if (typeof t.artist === "string") {
@@ -199,17 +218,22 @@ export class MusicTransferClient {
       } else if (t.artistName) {
         artistName = t.artistName;
       } else if (Array.isArray(t.artists) && t.artists[0]?.name) {
-        artistName = t.artists.map((a) => a.name).filter(Boolean).join(", ");
+        artistName = t.artists
+          .map((a) => a.name)
+          .filter(Boolean)
+          .join(", ");
       }
 
-      const albumName = typeof t.album === "string" ? t.album : t.album?.name || null;
+      const albumName =
+        typeof t.album === "string" ? t.album : t.album?.name || null;
 
       return {
         id: String(t.id || t.uuid || t.trackId || ""),
         name: String(t.name || t.title || "Untitled Track"),
         artist: artistName,
         album: albumName,
-        durationMs: t.durationMs || (t.duration ? t.duration * 1000 : undefined),
+        durationMs:
+          t.durationMs || (t.duration ? t.duration * 1000 : undefined),
         isrc: t.isrc || null,
         imageUrl: image,
       };
@@ -235,7 +259,7 @@ export class MusicTransferClient {
   public verifyWebhookSignature(
     signatureHeader: string | null,
     rawBody: string,
-    secretOverride?: string
+    secretOverride?: string,
   ): boolean {
     const secret =
       secretOverride ||
@@ -245,42 +269,82 @@ export class MusicTransferClient {
       return false;
     }
 
-    const parts: Record<string, string> = {};
+    const v1Signatures: string[] = [];
+    let timestamp: number | null = null;
+
     for (const part of signatureHeader.split(",")) {
       const index = part.indexOf("=");
       if (index > 0) {
-        parts[part.slice(0, index).trim()] = part.slice(index + 1).trim();
+        const key = part.slice(0, index).trim();
+        const value = part.slice(index + 1).trim();
+        if (key === "t") {
+          timestamp = Number(value);
+        } else if (key === "v1") {
+          v1Signatures.push(value);
+        }
       }
     }
 
-    const timestamp = Number(parts.t);
     const now = Date.now() / 1000;
     if (
+      timestamp === null ||
       !Number.isFinite(timestamp) ||
       now - timestamp > 300 ||
-      timestamp - now > 60
+      timestamp - now > 60 ||
+      v1Signatures.length === 0
     ) {
-      // Missing timestamp, older than 5 minutes, or skewed too far in the future
+      // Missing timestamp, older than 5 minutes, skewed too far into future, or missing signature
       return false;
     }
 
-    const expected = crypto
-      .createHmac("sha256", secret)
-      .update(`${parts.t}.${rawBody}`)
-      .digest("hex");
+    const payloadToSign = `${timestamp}.${rawBody}`;
 
-    if (
-      typeof parts.v1 !== "string" ||
-      Buffer.byteLength(parts.v1) !== expected.length
-    ) {
-      return false;
+    // Candidate keys to check: raw string, stripped prefix, hex buffer, base64 buffer
+    const candidateKeys: Array<string | Buffer> = [secret];
+    if (secret.startsWith("whsec_")) {
+      const unPrefixed = secret.slice(6);
+      candidateKeys.push(unPrefixed);
+      if (/^[0-9a-fA-F]+$/.test(unPrefixed) && unPrefixed.length % 2 === 0) {
+        try {
+          candidateKeys.push(Buffer.from(unPrefixed, "hex"));
+        } catch {
+          // ignore
+        }
+      }
+      try {
+        const b64Buf = Buffer.from(unPrefixed, "base64");
+        if (b64Buf.length > 0) {
+          candidateKeys.push(b64Buf);
+        }
+      } catch {
+        // ignore
+      }
     }
 
-    try {
-      return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(parts.v1));
-    } catch {
-      return false;
+    for (const key of candidateKeys) {
+      for (const encoding of ["hex", "base64"] as const) {
+        try {
+          const expected = crypto
+            .createHmac("sha256", key)
+            .update(payloadToSign)
+            .digest(encoding);
+
+          for (const signature of v1Signatures) {
+            const expectedBuf = Buffer.from(expected);
+            const signatureBuf = Buffer.from(signature);
+            if (expectedBuf.length === signatureBuf.length) {
+              if (crypto.timingSafeEqual(expectedBuf, signatureBuf)) {
+                return true;
+              }
+            }
+          }
+        } catch {
+          // ignore invalid candidate format
+        }
+      }
     }
+
+    return false;
   }
 }
 

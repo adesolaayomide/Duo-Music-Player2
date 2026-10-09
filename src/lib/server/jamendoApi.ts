@@ -5,12 +5,9 @@ const JAMENDO_BASE_URL = "https://api.jamendo.com/v3.0";
 
 export function getJamendoClientId(): string {
   const clientId =
-    process.env.JAMENDO_CLIENT_ID || process.env.NEXT_PUBLIC_JAMENDO_CLIENT_ID;
-  if (!clientId) {
-    throw new Error(
-      "JAMENDO_CLIENT_ID is not configured in server environment",
-    );
-  }
+    process.env.JAMENDO_CLIENT_ID ||
+    process.env.NEXT_PUBLIC_JAMENDO_CLIENT_ID ||
+    "5e8f6ba4";
   return clientId;
 }
 
